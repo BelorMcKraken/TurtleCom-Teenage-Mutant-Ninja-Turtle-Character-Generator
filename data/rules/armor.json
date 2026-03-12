@@ -1,0 +1,15 @@
+[
+  {"name": "Cloth/Padded", "cost": "$75", "ar": 10, "sdc": 15, "details": "Ancient Armor"},
+  {"name": "Leather", "cost": "$150", "ar": 11, "sdc": 20, "details": "Ancient Armor"},
+  {"name": "Studded Leather", "cost": "$250", "ar": 12, "sdc": 25, "details": "Ancient Armor"},
+  {"name": "Chain Mail", "cost": "$750", "ar": 13, "sdc": 50, "details": "Ancient Armor"},
+  {"name": "Scale Mail", "cost": "$1000", "ar": 14, "sdc": 75, "details": "Ancient Armor"},
+  {"name": "Plate & Mail", "cost": "$1500", "ar": 15, "sdc": 100, "details": "Ancient Armor"},
+  {"name": "Articulated Plate", "cost": "$2000", "ar": 16, "sdc": 150, "details": "Ancient Armor"},
+  {"name": "Light Concealed Vest", "cost": "$500", "ar": 10, "sdc": 10, "details": "Modern Armor (handgun/SMG/shotgun)"},
+  {"name": "Heavy Concealed Vest", "cost": "$750", "ar": 11, "sdc": 20, "details": "Modern Armor (handgun/SMG/shotgun)"},
+  {"name": "Tactical Vest", "cost": "$750", "ar": 12, "sdc": 40, "details": "Modern Armor (handgun/SMG/shotgun)"},
+  {"name": "Riot Armor (Full Suit)", "cost": "$1000", "ar": 13, "sdc": 60, "details": "Modern Armor (handgun/SMG/shotgun)"},
+  {"name": "Plate Carrier (Tactical)", "cost": "$1500", "ar": 14, "sdc": 125, "details": "Modern Armor (handgun/SMG/shotgun)"},
+  {"name": "Plate Carrier (Full Suit)", "cost": "$2000", "ar": 14, "sdc": 250, "details": "Modern Armor (handgun/SMG/shotgun)"}
+]

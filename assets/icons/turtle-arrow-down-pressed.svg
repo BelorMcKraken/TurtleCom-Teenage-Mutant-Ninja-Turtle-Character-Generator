@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Turtle shell (darker) -->
+  <ellipse cx="12" cy="9.6" rx="6.8" ry="5.2" fill="#a9a9a9"></ellipse>
+  <ellipse cx="12" cy="9.6" rx="5.0" ry="3.6" fill="none" stroke="#141414" stroke-width="1.4"></ellipse>
+
+  <!-- Turtle head -->
+  <circle cx="12" cy="15.2" r="2.1" fill="#a9a9a9"></circle>
+  <circle cx="11.3" cy="14.7" r="0.35" fill="#141414"></circle>
+  <circle cx="12.7" cy="14.7" r="0.35" fill="#141414"></circle>
+
+  <!-- Legs -->
+  <circle cx="7.2" cy="7.9" r="1.2" fill="#a9a9a9"></circle>
+  <circle cx="16.8" cy="7.9" r="1.2" fill="#a9a9a9"></circle>
+  <circle cx="8.2" cy="5.5" r="1.1" fill="#a9a9a9"></circle>
+  <circle cx="15.8" cy="5.5" r="1.1" fill="#a9a9a9"></circle>
+
+  <!-- Arrow chevron DOWN -->
+  <path d="M9.2 9.0 L12 11.9 L14.8 9.0" fill="none" stroke="#141414" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

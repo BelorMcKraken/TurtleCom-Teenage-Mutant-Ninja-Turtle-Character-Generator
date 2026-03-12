@@ -1,0 +1,11 @@
+[
+  {"name": "Small Wood & Leather", "cost": "$150", "parry": 0, "sdc": 20, "details": "10 lbs"},
+  {"name": "Small Polycarbonate Riot", "cost": "$200", "parry": 0, "sdc": 25, "details": "5 lbs"},
+  {"name": "Small Metal Ballistic", "cost": "$250", "parry": 0, "sdc": 30, "details": "10 lbs"},
+  {"name": "Medium Wood & Leather", "cost": "$200", "parry": 1, "sdc": 40, "details": "15 lbs"},
+  {"name": "Medium Polycarbonate Riot", "cost": "$250", "parry": 1, "sdc": 50, "details": "10 lbs"},
+  {"name": "Medium Metal Ballistic", "cost": "$300", "parry": 1, "sdc": 60, "details": "15 lbs"},
+  {"name": "Large Wood & Leather", "cost": "$250", "parry": 2, "sdc": 80, "details": "20 lbs"},
+  {"name": "Large Polycarbonate Riot", "cost": "$300", "parry": 2, "sdc": 100, "details": "15 lbs"},
+  {"name": "Large Metal Ballistic", "cost": "$3000", "parry": 2, "sdc": 125, "details": "20 lbs"}
+]

@@ -1,0 +1,223 @@
+{
+  "meta": {
+    "version": 1,
+    "default_per_level": 5,
+    "notes": "Base % values from screenshot. Dual values stored as [base, advanced]. Skills scale +5% per level by default."
+  },
+
+  "attribute_bonus_mode": "simple",
+
+  "professional": {
+    "Communications": [
+      {"name": "Cryptography", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Laser", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Optic Systems", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Radio", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Sensory Equipment", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Surveillance", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "TV/Video", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Domestic": [
+      {"name": "Cook", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Dance", "base_pct": 40, "per_level": 0, "attribute": "MA"},
+      {"name": "Fish", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Musical Instrument", "base_pct": 40, "per_level": 0, "attribute": "MA"},
+      {"name": "Sew", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Sing", "base_pct": 40, "per_level": 0, "attribute": "MA"}
+    ],
+
+    "Electrical": [
+      {"name": "Basic Electronics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Electrical Engineer", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Espionage": [
+      {"name": "Concealment", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Detect Ambush", "base_pct": 40, "per_level": 0, "attribute": "ME"},
+      {"name": "Detect Concealment", "base_pct": 40, "per_level": 0, "attribute": "ME"},
+      {"name": "Disguise", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Escape Artist", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Forgery", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Impersonation", "base_pct": 40, "per_level": 0, "attribute": "MA"},
+      {"name": "Interrogation", "base_pct": 40, "per_level": 0, "attribute": "ME"},
+      {"name": "Palming", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Pick Locks", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Pick Pockets", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Tracking", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Wilderness Survival", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Mechanical": [
+      {"name": "Aircraft Mechanics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Auto Mechanics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Basic Mechanics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Computer Repair", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Locksmith", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Mechanical Engineer", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Medical": [
+      {"name": "First Aid", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Paramedic", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Medical Doctor", "base_pct": [60, 50], "per_level": 0, "attribute": "IQ"},
+      {"name": "Pathology", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Forensics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Crime Scene Investigation", "base_pct": 30, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Military": [
+      {"name": "Demolitions", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Demolitions Disposal", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Weapons Systems", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Pilot Tank & APC", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Pilot Combat Helicopter", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Pilot Jet Fighter", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Physical": [
+      {"name": "Basic Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Expert Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Martial Arts Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Acrobatics", "base_pct": [50, 50], "per_level": 0, "attribute": "PP"},
+      {"name": "General Athletics", "base_pct": null, "per_level": 0, "attribute": "PE"},
+      {"name": "Body Building", "base_pct": null, "per_level": 0, "attribute": "PS"},
+      {"name": "Boxing", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Climbing", "base_pct": 50, "per_level": 0, "attribute": "PP"},
+      {"name": "Fencing", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Gymnastics", "base_pct": [40, 60], "per_level": 0, "attribute": "PP"},
+      {"name": "Prowl", "base_pct": 50, "per_level": 0, "attribute": "PP"},
+      {"name": "Running", "base_pct": null, "per_level": 0, "attribute": "PE"},
+      {"name": "Swimming", "base_pct": 40, "per_level": 0, "attribute": "PE"},
+      {"name": "Advanced Swimming", "base_pct": 50, "per_level": 0, "attribute": "PE"},
+      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"}
+    ],
+
+    "Piloting": [
+      {"name": "Automobile", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Motorcycle", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Truck", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Helicopter", "base_pct": 60, "per_level": 0, "attribute": "IQ", "slot_cost": 2},
+      {"name": "Propeller Aircraft", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Jet Aircraft", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Sail Boat", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Motor Boat", "base_pct": 60, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Science": [
+      {"name": "Astrophysics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Biology", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Botany", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Chemistry", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Analytical Chemistry", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Basic Mathematics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Advanced Mathematics", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Technical": [
+      {"name": "Art", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Computer Operation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Computer Programming", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Navigation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Photography", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+
+    "Weapon Proficiencies (Ancient)": [
+      {"name": "WP Blunt", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Chain", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Knife", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Sword", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Staff", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Spear", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Targeting (Ranged)", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Paired (Weapon)", "base_pct": null, "per_level": 0, "attribute": "PP"}
+    ],
+
+    "Weapon Proficiencies (Modern)": [
+      {"name": "WP Handgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Submachine Gun", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Shotgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Rifle", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Heavy", "base_pct": null, "per_level": 0, "attribute": "PP"}
+    ]
+  },
+
+  "amateur": {
+    "Communications": [
+      {"name": "Language", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Radio", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Domestic": [
+      {"name": "Cook", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Dance", "base_pct": 40, "per_level": 0, "attribute": "MA"},
+      {"name": "Fish", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Sew", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Sing", "base_pct": 40, "per_level": 0, "attribute": "MA"}
+    ],
+    "Electrical": [
+      {"name": "Basic Electronics", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Espionage Type (Rogue)": [
+      {"name": "Escape Artist", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Forgery", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Palming", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Pick Locks", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Pick Pockets", "base_pct": 30, "per_level": 0, "attribute": "PP"},
+      {"name": "Wilderness Survival", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Mechanical": [
+      {"name": "Basic Mechanics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
+      {"name": "Auto Mechanics", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Medical": [
+      {"name": "First Aid", "base_pct": 30, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Physical": [
+      {"name": "Basic Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Elite Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Martial Arts Combat", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "General Athletics", "base_pct": null, "per_level": 0, "attribute": "PE"},
+      {"name": "Body Building", "base_pct": null, "per_level": 0, "attribute": "PS"},
+      {"name": "Climbing", "base_pct": 50, "per_level": 0, "attribute": "PP"},
+      {"name": "Fencing", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "Gymnastics", "base_pct": [40, 60], "per_level": 0, "attribute": "PP"},
+      {"name": "Prowl", "base_pct": 50, "per_level": 0, "attribute": "PP"},
+      {"name": "Running", "base_pct": null, "per_level": 0, "attribute": "PE"},
+      {"name": "Swimming", "base_pct": 40, "per_level": 0, "attribute": "PE"},
+      {"name": "Advanced Swimming", "base_pct": 50, "per_level": 0, "attribute": "PE"},
+      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"}
+    ],
+    "Piloting": [
+      {"name": "Automobile", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Truck", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Motorcycle", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Propeller Aircraft", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Helicopter", "base_pct": 60, "per_level": 0, "attribute": "IQ", "slot_cost": 2},
+      {"name": "Sail Boat", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
+      {"name": "Motor Boat", "base_pct": 60, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Science": [
+      {"name": "Basic Mathematics", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Technical": [
+      {"name": "Art", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Computer Operation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Navigation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Photography", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+    ],
+    "Weapon Proficiencies (Ancient)": [
+      {"name": "WP Blunt", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Knife", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Sword", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Targeting (Ranged)", "base_pct": null, "per_level": 0, "attribute": "PP"}
+    ],
+    "Weapon Proficiencies (Modern)": [
+      {"name": "WP Handgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Shotgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Rifle", "base_pct": null, "per_level": 0, "attribute": "PP"}
+    ]
+  }
+}
