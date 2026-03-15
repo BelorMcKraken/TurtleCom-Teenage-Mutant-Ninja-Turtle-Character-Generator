@@ -1,0 +1,1251 @@
+{
+"AARDVARK": {
+  "bio_e": 60,
+  "original": {"size_level": 5, "length_in": 48, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Aardvarks are anteater-like insectivores adapted to feeding on ants/termites; built for digging; long sticky tongue.",
+  "attribute_bonuses": {"PS": 2, "PP": 1, "PE": 2},
+  "natural_weapons": [{"name": "Claws (1D6 damage)", "cost": 5, "details": "Claws: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced olfactory sense."},
+    {"name": "Digging", "cost": 5, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."}
+  ]
+},
+
+"ALLIGATOR & CROCODILE": {
+  "bio_e": 40,
+  "original": {"size_level": 9, "length_in": 240, "weight_lbs": 175, "build": "Long"},
+  "mutant_changes_text": "Large swamp-dwelling carnivorous reptiles with protective scales and long jaws of conical teeth.",
+  "attribute_bonuses": {"PS": 3, "PE": 1, "Spd": 1},
+  "natural_weapons": [
+    {"name": "Teeth (1D8 damage)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12 damage)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Quick Run (1/min)", "cost": 10, "details": "Double move as a move action; +2 Initiative & Dodge for rest of round."},
+    {"name": "Hold Breath", "cost": 5, "details": "Can hold breath for extended periods."},
+    {"name": "Nightvision", "cost": 5, "details": "See in low light/darkness."},
+    {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 10, "details": "AR 8; +20 SDC."},
+    {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 20, "details": "AR 10; +40 SDC."},
+    {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 30, "details": "AR 12; +60 SDC."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"AMPHIBIANS — FROG & TOAD": {
+  "bio_e": 80,
+  "original": {"size_level": 2, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
+  "mutant_changes_text": "Many species; aquatic or ground/tree. Insect-eaters with sticky tongues; some secrete toxins.",
+  "attribute_bonuses": {"PP": 2, "Spd": 2},
+  "natural_weapons": [],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives depths to 400 ft."},
+    {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
+    {"name": "Poison Touch", "cost": 15, "details": "Save vs Poison; fail: 1D6 HP + paralysis 1D6 rounds; success: -1 S/P/D 1D6 rounds; cumulative."}
+  ]
+},
+
+"AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL": {
+  "bio_e": 70,
+  "original": {"size_level": 2, "length_in": 29, "weight_lbs": 5.5, "build": "Long"},
+  "mutant_changes_text": "Smooth-skinned long-tailed amphibians; famed for regeneration. Terrestrial near water, semi-aquatic, or primarily aquatic.",
+  "attribute_bonuses": {"PP": 1, "PE": 2},
+  "natural_weapons": [{"name": "Teeth (1D6 damage)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Regeneration (automatic)", "cost": 0, "details": "Regrows limbs/organs; +20% save vs coma/death; recover 1 HP + 3 SDC per hour; severe injury effects temporary (6D6 hours)."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."},
+    {"name": "Master Swimmer", "cost": 10, "details": "Swimming skill or +20%; survives depths to 400 ft."},
+    {"name": "Gills", "cost": 5, "details": "Breathes underwater."}
+  ]
+},
+
+"APES — CHIMPANZEE": {
+  "bio_e": 25,
+  "original": {"size_level": 8, "length_in": 60, "weight_lbs": 175, "build": "Medium"},
+  "mutant_changes_text": "Great apes are closest relatives to humans; already have partial hands/upright stance/human-like looks. Attribute bonus text garbled in source.",
+  "attribute_bonuses": {},
+  "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
+    {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"APES — GORILLA": {
+  "bio_e": 10,
+  "original": {"size_level": 11, "length_in": 72, "weight_lbs": 800, "build": "Medium"},
+  "mutant_changes_text": "Gorilla baseline; weight listed as 200–800 (roll 2D4×100). Attribute bonuses garbled in source.",
+  "attribute_bonuses": {},
+  "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
+    {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"APES — ORANGUTAN": {
+  "bio_e": 20,
+  "original": {"size_level": 9, "length_in": 54, "weight_lbs": 150, "build": "Medium"},
+  "mutant_changes_text": "Orangutan baseline; attribute bonuses garbled in source (mentions social/mental boosts and PS +2 but unclear).",
+  "attribute_bonuses": {},
+  "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
+    {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"ARMADILLO": {
+  "bio_e": 60,
+  "original": {"size_level": 5, "length_in": 36, "weight_lbs": 30, "build": "Medium"},
+  "mutant_changes_text": "Naturally armored mammal (nine-banded armadillo). Length listed as 2 ft + 1 ft tail; weight 20–30 lbs.",
+  "attribute_bonuses": {"PS": 2, "PE": 3},
+  "natural_weapons": [{"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; useful for climbing."}],
+  "abilities": [
+    {"name": "Natural Armor: Light (AR 10, +20 SDC)", "cost": 5, "details": "AR 10; +20 SDC."},
+    {"name": "Natural Armor: Medium (AR 12, +40 SDC)", "cost": 10, "details": "AR 12; +40 SDC."},
+    {"name": "Natural Armor: Heavy (AR 14, +60 SDC)", "cost": 20, "details": "AR 14; +60 SDC."},
+    {"name": "Digging", "cost": 5, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."}
+  ]
+},
+
+"BADGER": {
+  "bio_e": 65,
+  "original": {"size_level": 4, "length_in": 28, "weight_lbs": 16, "build": "Short"},
+  "mutant_changes_text": "Squat carnivores that dig into underground nests of prey.",
+  "attribute_bonuses": {"PS": 3, "PP": 1, "PE": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Claws: 1D8"},
+    {"name": "Teeth (1D8)", "cost": 75, "details": "Bite: 1D8 (cost appears unusually high; kept as written)."}
+  ],
+  "abilities": [
+    {"name": "Poison Resistance", "cost": 5, "details": "Bonus to save vs venoms/poisons."},
+    {"name": "Digging", "cost": 5, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."}
+  ]
+},
+
+"BAT": {
+  "bio_e": 70,
+  "original": {"size_level": 1, "length_in": 24, "weight_lbs": 2.25, "build": "Medium"},
+  "mutant_changes_text": "Flying mammals; sonar is useful because they are nocturnal and live in dark caves. Length is wingspan (1–2 ft).",
+  "attribute_bonuses": {"IQ": 1, "ME": 1, "PP": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Sonar", "cost": 5, "details": "Echolocation/sonar."}
+  ]
+},
+
+"BEAR — BLACK BEAR": {
+  "bio_e": 15,
+  "original": {"size_level": 14, "length_in": null, "weight_lbs": 400, "build": "Medium"},
+  "mutant_changes_text": "Bear baseline (black bear). Weight 300–400 lbs. Build not stated in source; treated as Medium.",
+  "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
+    {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"BEAR — GRIZZLY": {
+  "bio_e": 10,
+  "original": {"size_level": 16, "length_in": null, "weight_lbs": 600, "build": "Medium"},
+  "mutant_changes_text": "Grizzly bear; uses same Natural Weapons/Abilities as Black Bear entry.",
+  "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
+    {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"BEAR — BROWN (KODIAK)": {
+  "bio_e": 5,
+  "original": {"size_level": 17, "length_in": null, "weight_lbs": 900, "build": "Medium"},
+  "mutant_changes_text": "Brown/Kodiak bear; uses same Natural Weapons/Abilities as Black Bear entry.",
+  "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
+    {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"BEAR — POLAR": {
+  "bio_e": 0,
+  "original": {"size_level": 18, "length_in": 108, "weight_lbs": 1000, "build": "Medium"},
+  "mutant_changes_text": "Polar bear; same as bear baseline, except Hold Breath costs 5 Bio-E per note.",
+  "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath", "cost": 5, "details": "Hold Breath (polar bear special cost note)."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
+    {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"BEAVER": {
+  "bio_e": 50,
+  "original": {"size_level": 6, "length_in": 48, "weight_lbs": 60, "build": "Short"},
+  "mutant_changes_text": "Dam-building rodent with wide flat tail; 'natural engineers' and family oriented.",
+  "attribute_bonuses": {"IQ": 2, "ME": 2, "MA": 2, "PS": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D12; can chew wood/clay/crumbly stone 1 in/round; hard plastics/ceramics/concrete/mortar at half speed."}
+  ],
+  "abilities": [
+    {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
+    {"name": "Tunneling", "cost": 5, "details": "Tunneling ability."},
+    {"name": "Advanced Excavating", "cost": 10, "details": "Instinctive permanent structures; double normal time."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
+    {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."}
+  ]
+},
+
+"BIRDS — CHICKEN": {
+  "bio_e": 75,
+  "original": {"size_level": 3, "length_in": 12, "weight_lbs": 10, "build": "Short"},
+  "mutant_changes_text": "Domesticated; bred for food/eggs; one of the few that can see ultraviolet.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."}
+  ]
+},
+
+"BIRDS — CROW / RAVEN": {
+  "bio_e": 70,
+  "original": {"size_level": 3, "length_in": 24, "weight_lbs": 8, "build": "Medium"},
+  "mutant_changes_text": "Intelligent social scavengers; live off crops/foraging. Includes noise/voice mimicry notes.",
+  "attribute_bonuses": {"IQ": 4, "ME": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D6) (climbing)", "cost": 5, "details": "Talons: 1D6; climbing."},
+    {"name": "Beak (1D8)", "cost": 5, "details": "Beak: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Noise Mimicry / Effects", "cost": 0, "details": "Imitate noises; with full speech can imitate voices; +20% Impersonation bonus but still need skill."},
+    {"name": "Flight", "cost": 10, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"BIRDS — PARROT": {
+  "bio_e": 70,
+  "original": {"size_level": 3, "length_in": 24, "weight_lbs": 8, "build": "Medium"},
+  "mutant_changes_text": "Colorful birds; many imitate voices. Uses same weapons/abilities pattern as Crow/Raven (including mimicry).",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PB": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D6) (climbing)", "cost": 5, "details": "Talons: 1D6; climbing."},
+    {"name": "Beak (1D8)", "cost": 5, "details": "Beak: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Noise Mimicry / Effects", "cost": 0, "details": "Imitate noises; with full speech can imitate voices; +20% Impersonation bonus but still need skill."},
+    {"name": "Flight", "cost": 10, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"BIRDS — DUCK": {
+  "bio_e": 75,
+  "original": {"size_level": 3, "length_in": 24, "weight_lbs": 15, "build": "Medium"},
+  "mutant_changes_text": "Duck baseline (waterfowl). Hold Breath is automatic.",
+  "attribute_bonuses": {"PE": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
+    {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
+    {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."}
+  ]
+},
+
+"BIRDS — GOOSE": {
+  "bio_e": 70,
+  "original": {"size_level": 4, "length_in": 36, "weight_lbs": 25, "build": "Medium"},
+  "mutant_changes_text": "Goose (same waterfowl package as Duck).",
+  "attribute_bonuses": {"MA": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
+    {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
+    {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."}
+  ]
+},
+
+"BIRDS — SWAN": {
+  "bio_e": 65,
+  "original": {"size_level": 5, "length_in": 60, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Swan (same waterfowl package as Duck).",
+  "attribute_bonuses": {"PB": 3},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
+    {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
+    {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."}
+  ]
+},
+
+"BIRDS — HAWK / FALCON": {
+  "bio_e": 70,
+  "original": {"size_level": 3, "length_in": 24, "weight_lbs": 15, "build": "Medium"},
+  "mutant_changes_text": "Predatory birds with curved beaks/talons/sharp eyesight; dive attacks. Beak line truncated in source.",
+  "attribute_bonuses": {"PS": 2, "PP": 4, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D8) (climbing)", "cost": 5, "details": "Talons: 1D8; climbing."},
+    {"name": "Talons (1D10) (climbing)", "cost": 10, "details": "Talons: 1D10; climbing."}
+  ],
+  "abilities": []
+},
+
+"BIRDS — EAGLE": {
+  "bio_e": 65,
+  "original": {"size_level": 4, "length_in": 36, "weight_lbs": 25, "build": "Medium"},
+  "mutant_changes_text": "Eagle; other features match Hawk/Falcon block; abilities text broken in source at this point.",
+  "attribute_bonuses": {"PS": 6, "PP": 2, "PB": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D8) (climbing)", "cost": 5, "details": "Talons: 1D8; climbing."},
+    {"name": "Talons (1D10) (climbing)", "cost": 10, "details": "Talons: 1D10; climbing."}
+  ],
+  "abilities": []
+},
+
+"BIRDS — PENGUIN": {
+  "bio_e": 53,
+  "original": {"size_level": 7, "length_in": 42, "weight_lbs": 90, "build": "Short"},
+  "mutant_changes_text": "Flightless diving birds adapted to cold climates; smaller temperate species exist.",
+  "attribute_bonuses": {"MA": 2, "PE": 2},
+  "natural_weapons": [{"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}],
+  "abilities": [
+    {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."},
+    {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."},
+    {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survive depths to 500 ft."}
+  ]
+},
+
+"BIRDS — PIGEON": {
+  "bio_e": 85,
+  "original": {"size_level": 2, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
+  "mutant_changes_text": "Pigeon baseline for city birds/doves/game birds. Beak damage unclear in source line.",
+  "attribute_bonuses": {"PE": 4},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — DOVE": {
+  "bio_e": 90,
+  "original": {"size_level": 1, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
+  "mutant_changes_text": "Dove variant (same package as Pigeon).",
+  "attribute_bonuses": {"PE": 2, "PB": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — WILD GAME BIRDS (GROUSE / PARTRIDGE / PHEASANT / QUAIL)": {
+  "bio_e": 80,
+  "original": {"size_level": 3, "length_in": 36, "weight_lbs": 20, "build": "Medium"},
+  "mutant_changes_text": "Wild game bird variant (same package as Pigeon).",
+  "attribute_bonuses": {"PE": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — SMALL WILD BIRDS": {
+  "bio_e": 90,
+  "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
+  "mutant_changes_text": "Small birds that feed on grains/seeds/fruits/insects; includes many urban/suburban forest species.",
+  "attribute_bonuses": {"PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — TEMPERATE SONGBIRDS": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
+  "mutant_changes_text": "Temperate songbirds.",
+  "attribute_bonuses": {"MA": 2, "PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Natural Singer (automatic)", "cost": 0, "details": "Sing skill or +20%."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — TROPICAL SONGBIRDS": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
+  "mutant_changes_text": "Tropical songbirds.",
+  "attribute_bonuses": {"PP": 2, "PB": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Natural Singer (automatic)", "cost": 0, "details": "Sing skill or +20%."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."}
+  ]
+},
+
+"BIRDS — TURKEY": {
+  "bio_e": 60,
+  "original": {"size_level": 5, "length_in": 48, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Domestic turkey is flightless and bred for food; wild turkeys are leaner/faster and can fly.",
+  "attribute_bonuses": {"PP": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
+    {"name": "Spurs (1D10)", "cost": 10, "details": "Spurs: 1D10"},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}
+  ],
+  "abilities": [
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Flight", "cost": 20, "details": "True flight."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"BUFFALO & BISON": {
+  "bio_e": 0,
+  "original": {"size_level": 19, "length_in": 132, "weight_lbs": 2000, "build": "Medium"},
+  "mutant_changes_text": "Bison are huge North American grazers with a shoulder hump; true buffalo are Africa/Asia and lack the hump.",
+  "attribute_bonuses": {"PS": 6, "Spd": 4},
+  "natural_weapons": [{"name": "Horns (1D8)", "cost": 5, "details": "Horns: 1D8"}],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."}
+  ]
+},
+
+"CAMEL": {
+  "bio_e": 0,
+  "original": {"size_level": 18, "length_in": 132, "weight_lbs": 1000, "build": "Medium"},
+  "mutant_changes_text": "Desert pack animals known for water storage; often short-tempered.",
+  "attribute_bonuses": {"PS": 2, "PE": 4, "Spd": 6},
+  "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Spit", "cost": 5, "details": "12 ft; +2 Strike; called shot to eyes blinds 1D4 rounds."},
+    {"name": "Water Storage", "cost": 10, "details": "2 days per gallon; store up to 10 gallons; drink/store in 12 minutes."}
+  ]
+},
+
+"CANINES — DOGS": {
+  "bio_e": 65,
+  "original": {"size_level": null, "length_in": null, "weight_lbs": null, "build": "Medium"},
+  "mutant_changes_text": "Many breeds; baseline is average mongrel. Bio-E: 65 (reduce by 5 for each step above Size Level 3). Attribute bonuses vary by size: SL 3–5: IQ+2 MA+2 PP+2 Spd+2; SL 6–8: IQ+2 MA+2 PS+2 Spd+2.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
+    {"name": "Teeth (1D10)", "cost": 10, "details": "Bite: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Digging", "cost": 10, "details": "Digging ability."},
+    {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"CANINES — FOX": {
+  "bio_e": 60,
+  "original": {"size_level": 3, "length_in": 40, "weight_lbs": 10, "build": "Long"},
+  "mutant_changes_text": "Fox baseline (red/gray/arctic similar). Build spelled 'Lone' in source.",
+  "attribute_bonuses": {"IQ": 2, "ME": 4, "PB": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
+    {"name": "Teeth (1D10)", "cost": 10, "details": "Bite: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Digging", "cost": 10, "details": "Digging ability."}
+  ]
+},
+
+"CANINES — COYOTE": {
+  "bio_e": 55,
+  "original": {"size_level": 5, "length_in": 54, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Coyote baseline; other features are same as wolf block per source note.",
+  "attribute_bonuses": {"IQ": 2, "ME": 2, "PP": 2, "PE": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Digging (Coyotes only)", "cost": 10, "details": "Digging ability."}
+  ]
+},
+
+"CANINES — WOLF": {
+  "bio_e": 45,
+  "original": {"size_level": 8, "length_in": 72, "weight_lbs": 150, "build": "Medium"},
+  "mutant_changes_text": "Wolf baseline.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 4, "PP": 2, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Vision (Wolves only)", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"CATTLE — COW": {
+  "bio_e": 10,
+  "original": {"size_level": 16, "length_in": 96, "weight_lbs": 2000, "build": "Short"},
+  "mutant_changes_text": "Domesticated meat/milk cattle; many breeds.",
+  "attribute_bonuses": {"PS": 2, "PE": 4, "Spd": 2},
+  "natural_weapons": [{"name": "Horns (1D6)", "cost": 5, "details": "Horns: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"CATTLE — BULL": {
+  "bio_e": 10,
+  "original": {"size_level": 16, "length_in": 96, "weight_lbs": 2000, "build": "Short"},
+  "mutant_changes_text": "Bull variant (same baseline as cow).",
+  "attribute_bonuses": {"PS": 4, "PE": 2, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Horns (1D6)", "cost": 5, "details": "Horns: 1D6"},
+    {"name": "Horns (1D12) (Bulls only)", "cost": 10, "details": "Horns: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"DEER": {
+  "bio_e": 30,
+  "original": {"size_level": 13, "length_in": 72, "weight_lbs": 400, "build": "Medium"},
+  "mutant_changes_text": "Deer baseline (hands/biped/speech/looks shared within deer/elk/moose block per source).",
+  "attribute_bonuses": {"PP": 2, "PE": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Antlers (Small damage) (bucks only)", "cost": 5, "details": "Antlers (small damage)"},
+    {"name": "Antlers (Large damage) (bucks only)", "cost": 10, "details": "Antlers (large damage)"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."}
+  ]
+},
+
+"ELK": {
+  "bio_e": 10,
+  "original": {"size_level": 17, "length_in": 108, "weight_lbs": 1100, "build": "Medium"},
+  "mutant_changes_text": "Elk baseline (deer family block).",
+  "attribute_bonuses": {"PS": 2, "PE": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Antlers (Small damage) (bulls only)", "cost": 5, "details": "Antlers (small damage)"},
+    {"name": "Antlers (Large damage) (bulls only)", "cost": 10, "details": "Antlers (large damage)"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."}
+  ]
+},
+
+"MOOSE": {
+  "bio_e": 0,
+  "original": {"size_level": 19, "length_in": 120, "weight_lbs": 1500, "build": "Medium"},
+  "mutant_changes_text": "Moose baseline (deer family block).",
+  "attribute_bonuses": {"PS": 4, "PE": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Antlers (Small damage) (bulls only)", "cost": 5, "details": "Antlers (small damage)"},
+    {"name": "Antlers (Large damage) (bulls only)", "cost": 10, "details": "Antlers (large damage)"}
+  ],
+  "abilities": [
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."}
+  ]
+},
+
+"ELEPHANT": {
+  "bio_e": 0,
+  "original": {"size_level": 20, "length_in": 120, "weight_lbs": 10000, "build": "Short"},
+  "mutant_changes_text": "Largest land animal; strong; trunk functions as flexible prehensile limb.",
+  "attribute_bonuses": {"IQ": 4, "MA": 2, "PS": 4},
+  "natural_weapons": [
+    {"name": "Tusks (1D8)", "cost": 5, "details": "Tusks: 1D8"},
+    {"name": "Tusks (1D12)", "cost": 10, "details": "Tusks: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Prehensile Trunk", "cost": 5, "details": "Extra limb; counts as Partial Hand; long enough to touch ground."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."}
+  ]
+},
+
+"FELINES — BOBCAT": {
+  "bio_e": 70,
+  "original": {"size_level": 5, "length_in": 42, "weight_lbs": 22, "build": "Short"},
+  "mutant_changes_text": "Bobcat (feline block; other features match Lynx per note).",
+  "attribute_bonuses": {"ME": 2, "PP": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"FELINES — LYNX": {
+  "bio_e": 65,
+  "original": {"size_level": 5, "length_in": 40, "weight_lbs": 35, "build": "Short"},
+  "mutant_changes_text": "Lynx baseline.",
+  "attribute_bonuses": {"ME": 2, "PP": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"FELINES — CAT": {
+  "bio_e": 75,
+  "original": {"size_level": 3, "length_in": 24, "weight_lbs": 10, "build": "Medium"},
+  "mutant_changes_text": "Domesticated cat; markings vary.",
+  "attribute_bonuses": {"MA": 2, "PP": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"FELINES — CHEETAH": {
+  "bio_e": 45,
+  "original": {"size_level": 8, "length_in": 60, "weight_lbs": 125, "build": "Long"},
+  "mutant_changes_text": "Fastest mammals; sleek athletic build. Height listed (up to 30 inches tall).",
+  "attribute_bonuses": {"PS": 1, "PP": 4, "PE": 2, "Spd": 10},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Quick Run (1/min)", "cost": 10, "details": "Double move; +2 Initiative & Dodge for rest of round."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"FELINES — COUGAR": {
+  "bio_e": 40,
+  "original": {"size_level": 9, "length_in": 60, "weight_lbs": 175, "build": "Medium"},
+  "mutant_changes_text": "Cougar baseline (great cats block).",
+  "attribute_bonuses": {"ME": 2, "PS": 2, "PP": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"FELINES — JAGUAR / LEOPARD": {
+  "bio_e": 23,
+  "original": {"size_level": 12, "length_in": 72, "weight_lbs": 300, "build": "Medium"},
+  "mutant_changes_text": "Jaguar/Leopard baseline (great cats block).",
+  "attribute_bonuses": {"ME": 2, "PS": 3, "PP": 3, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Great Leaping", "cost": 10, "details": "Triple Jump distance (Jaguar/Leopard only)."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"FELINES — LION": {
+  "bio_e": 15,
+  "original": {"size_level": 14, "length_in": null, "weight_lbs": null, "build": "Medium"},
+  "mutant_changes_text": "Lion baseline. Weight unclear in source line; left as null.",
+  "attribute_bonuses": {"MA": 2, "PS": 4, "PP": 2, "Spd": 3},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"FELINES — TIGER": {
+  "bio_e": 10,
+  "original": {"size_level": 15, "length_in": null, "weight_lbs": 500, "build": "Medium"},
+  "mutant_changes_text": "Tiger baseline.",
+  "attribute_bonuses": {"PS": 6, "PP": 1, "PE": 1, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
+    {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."}
+  ]
+},
+
+"GOAT": {
+  "bio_e": 55,
+  "original": {"size_level": 6, "length_in": 10, "weight_lbs": 75, "build": "Medium"},
+  "mutant_changes_text": "Domesticated milk/meat animal; hardy. Length line appears inconsistent (kept as written: 'up to 10 inches long').",
+  "attribute_bonuses": {"IQ": 1, "ME": 1, "PE": 4, "Spd": 2},
+  "natural_weapons": [{"name": "Horns (1D8)", "cost": 5, "details": "Horns: 1D8"}],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Natural Climber", "cost": 5, "details": "Climbing skill or +20%."},
+    {"name": "Toxin Resistance", "cost": 10, "details": "+5 save vs toxins/poisons/drugs."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"HIPPOPOTAMUS": {
+  "bio_e": 0,
+  "original": {"size_level": 20, "length_in": 168, "weight_lbs": 4000, "build": "Short"},
+  "mutant_changes_text": "Giant aggressive grazers; spend most of life in water.",
+  "attribute_bonuses": {"ME": 2, "PS": 6, "PE": 2},
+  "natural_weapons": [{"name": "Teeth (1D12)", "cost": 5, "details": "Bite: 1D12"}],
+  "abilities": [
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
+    {"name": "Light Natural Armor (AR 8, +40 SDC)", "cost": 10, "details": "AR 8; +40 SDC."},
+    {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."}
+  ]
+},
+
+"HORSE (RIDING HORSE)": {
+  "bio_e": 10,
+  "original": {"size_level": 18, "length_in": 60, "weight_lbs": 1400, "build": "Medium"},
+  "mutant_changes_text": "Domesticated grazing animal; typical riding horse. Height listed as up to 60 inches at shoulder.",
+  "attribute_bonuses": {"PS": 2, "PE": 2, "Spd": 8},
+  "natural_weapons": [],
+  "abilities": [
+    {"name": "Leaping", "cost": 10, "details": "Double Jump distance."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"LEMUR": {
+  "bio_e": 60,
+  "original": {"size_level": 3, "length_in": 42, "weight_lbs": 6, "build": "Long"},
+  "mutant_changes_text": "Long-snouted primate from Madagascar (ring-tailed lemur baseline).",
+  "attribute_bonuses": {"IQ": 1, "MA": 3, "PP": 2},
+  "natural_weapons": [{"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"LIZARDS (GROUP ENTRY)": {
+  "bio_e": 0,
+  "original": {"size_level": null, "length_in": null, "weight_lbs": null, "build": "Long"},
+  "mutant_changes_text": "Group entry: Gecko/Skink (SL1), Chameleon/Horned Lizard (SL2), Gila Monster/Iguana (SL3), Komodo Dragon (SL13). Bio-E: 85/80/75/25 respectively; attribute bonuses vary by variant. This entry is kept as a group placeholder.",
+  "attribute_bonuses": {},
+  "natural_weapons": [],
+  "abilities": []
+},
+
+"MARTEN & MINK": {
+  "bio_e": 80,
+  "original": {"size_level": 2, "length_in": 20, "weight_lbs": 3, "build": "Long"},
+  "mutant_changes_text": "Larger cousins to weasels; long bodies; valuable fur. Martens are fox-faced climbers; minks live near water.",
+  "attribute_bonuses": {"IQ": 2, "ME": 1, "PP": 2, "Spd": 5},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Fit through openings a quarter their Size Level."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"MOLE": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 6, "weight_lbs": 1, "build": "Short"},
+  "mutant_changes_text": "Small furry burrowers adapted to underground life. Looks partial/full lines cut off in source.",
+  "attribute_bonuses": {"IQ": 1, "PE": 2},
+  "natural_weapons": [{"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"}],
+  "abilities": [
+    {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
+    {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
+    {"name": "Tunneling", "cost": 5, "details": "Tunneling ability."},
+    {"name": "Advanced Excavating", "cost": 10, "details": "Instinctive permanent structures; double time."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"MONKEY (ARBOREAL)": {
+  "bio_e": 45,
+  "original": {"size_level": 4, "length_in": 24, "weight_lbs": 20, "build": "Long"},
+  "mutant_changes_text": "Arboreal monkeys (prehensile tails) kept as pets/research animals; markings vary.",
+  "attribute_bonuses": {"IQ": 2, "ME": 2, "PP": 2, "PE": 2},
+  "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
+    {"name": "Prehensile Tail", "cost": 15, "details": "Extra limb; Partial Hand."},
+    {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"BABOON": {
+  "bio_e": 35,
+  "original": {"size_level": 6, "length_in": 36, "weight_lbs": 65, "build": "Medium"},
+  "mutant_changes_text": "Ground-dwelling tribal monkeys; mandrills/geladas similar. Uses same ability package as Monkey (Arboreal) per source.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 4},
+  "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
+    {"name": "Prehensile Tail", "cost": 15, "details": "Extra limb; Partial Hand."},
+    {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."}
+  ]
+},
+
+"MUSKRAT": {
+  "bio_e": 75,
+  "original": {"size_level": 2, "length_in": 25, "weight_lbs": 14, "build": "Short"},
+  "mutant_changes_text": "River-dwelling vegetarians/scavengers; build dens with underwater entrances. Abilities not listed in source beyond gnawing note.",
+  "attribute_bonuses": {"IQ": 3, "ME": 1, "MA": 1},
+  "natural_weapons": [
+    {"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
+    {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage unclear in source line."},
+    {"name": "Teeth (1D10) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D10; gnawing per beaver-style chew rules."}
+  ],
+  "abilities": []
+},
+
+"RABBIT": {
+  "bio_e": 70,
+  "original": {"size_level": 3, "length_in": 18, "weight_lbs": 8, "build": "Medium"},
+  "mutant_changes_text": "Rabbits/hares worldwide; small vegetarians that depend on speed and agility.",
+  "attribute_bonuses": {"PP": 2, "Spd": 8},
+  "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Digging", "cost": 5, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
+    {"name": "Excavating", "cost": 15, "details": "Excavating ability."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"RACCOON": {
+  "bio_e": 65,
+  "original": {"size_level": 4, "length_in": 38, "weight_lbs": 18, "build": "Short"},
+  "mutant_changes_text": "Adaptable nocturnal scavengers. Looks text partially truncated in source.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PP": 2, "PE": 2},
+  "natural_weapons": [{"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."}],
+  "abilities": [
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"RHINOCEROS": {
+  "bio_e": 0,
+  "original": {"size_level": 20, "length_in": 78, "weight_lbs": 8000, "build": "Long"},
+  "mutant_changes_text": "Aggressive grazing animals; good runners; very strong. African rhinos have two horns; Great Indian rhino has one.",
+  "attribute_bonuses": {"PS": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Horn (1D8)", "cost": 5, "details": "Horn: 1D8"},
+    {"name": "Horn (1D12)", "cost": 10, "details": "Horn: 1D12"}
+  ],
+  "abilities": [
+    {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 10, "details": "AR 8; +20 SDC."},
+    {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 20, "details": "AR 10; +40 SDC."},
+    {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 30, "details": "AR 12; +60 SDC."},
+    {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 40, "details": "AR 14; +80 SDC."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
+"PIG": {
+  "bio_e": 25,
+  "original": {"size_level": 12, "length_in": 72, "weight_lbs": 800, "build": "Short"},
+  "mutant_changes_text": "Domesticated pigs bred for meat production; can be very large.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 2, "PE": 2, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Tusks (small, 1D6)", "cost": 5, "details": "Tusks: 1D6"},
+    {"name": "Tusks (large, 1D10)", "cost": 10, "details": "Tusks: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."}
+  ]
+},
+
+"BOAR": {
+  "bio_e": 25,
+  "original": {"size_level": 12, "length_in": 72, "weight_lbs": 800, "build": "Short"},
+  "mutant_changes_text": "Aggressive wild pigs; invasive; dangerous with tusks.",
+  "attribute_bonuses": {"PS": 4, "PE": 4, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Tusks (small, 1D6)", "cost": 5, "details": "Tusks: 1D6"},
+    {"name": "Tusks (large, 1D10)", "cost": 10, "details": "Tusks: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."}
+  ]
+},
+
+"PORCUPINE": {
+  "bio_e": 65,
+  "original": {"size_level": 5, "length_in": 42, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Defensive quills; dangerous to predators.",
+  "attribute_bonuses": {"ME": 2, "PE": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Quill Defense", "cost": 15, "details": "Natural Armor AR 12, +20 SDC; attackers rolling <12 take 1D12; mutant gets +1D12 on unarmed melee."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"RODENTS (GROUP ENTRY)": {
+  "bio_e": 0,
+  "original": {"size_level": null, "length_in": null, "weight_lbs": null, "build": "Medium"},
+  "mutant_changes_text": "Group entry: SL1 (Mice/Gerbils/Hamsters) Bio-E 85; SL2 (Rats/Guinea Pigs/Pikas) Bio-E 80. Attribute bonuses vary by subgroup. This entry is kept as a group placeholder.",
+  "attribute_bonuses": {},
+  "natural_weapons": [],
+  "abilities": []
+},
+
+"SHARK (Tiger Shark baseline)": {
+  "bio_e": 0,
+  "original": {"size_level": 19, "length_in": 168, "weight_lbs": 1400, "build": "Long"},
+  "mutant_changes_text": "Ancient aquatic apex predators; entry lists tiger shark baseline.",
+  "attribute_bonuses": {"PS": 4, "PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Bite: 1D10"},
+    {"name": "Teeth (1D12+2)", "cost": 10, "details": "Bite: 1D12+2"}
+  ],
+  "abilities": [
+    {"name": "Electrosense", "cost": 5, "details": "Detect electrical fields in water."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
+    {"name": "Gills", "cost": 5, "details": "Breathes underwater."},
+    {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; depth line cut off in source."}
+  ]
+},
+
+"SKUNK (Striped)": {
+  "bio_e": 70,
+  "original": {"size_level": 3, "length_in": 32, "weight_lbs": 8, "build": "Short"},
+  "mutant_changes_text": "Striped skunk; uses stink glands as defense. Looks text mixed/truncated in source.",
+  "attribute_bonuses": {"ME": 2, "PE": 2},
+  "natural_weapons": [],
+  "abilities": [
+    {"name": "Stink Spray", "cost": 15, "details": "Butyl mercaptan musk w/ sulfuric acid; 8/day; 10 ft; failed Save vs Toxin = nausea/incapacitated 2D6 minutes; stench lasts 2D12 days; Advanced Smell = -4 to save."}
+  ]
+},
+
+"SKUNK (Spotted)": {
+  "bio_e": 75,
+  "original": {"size_level": 2, "length_in": 20, "weight_lbs": 23, "build": "Short"},
+  "mutant_changes_text": "Spotted skunk variant (same stink spray). Weight listed as 23 lbs in source (unusual; kept).",
+  "attribute_bonuses": {"ME": 2, "PE": 2},
+  "natural_weapons": [],
+  "abilities": [
+    {"name": "Stink Spray", "cost": 15, "details": "Butyl mercaptan musk w/ sulfuric acid; 8/day; 10 ft; failed Save vs Toxin = nausea/incapacitated 2D6 minutes; stench lasts 2D12 days; Advanced Smell = -4 to save."}
+  ]
+},
+
+"SQUIRREL": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 20, "weight_lbs": 1, "build": "Long"},
+  "mutant_changes_text": "Common urban wild mammal; great climbers. Flying squirrels can glide.",
+  "attribute_bonuses": {"PP": 2, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
+    {"name": "Teeth (1D10) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D10; gnawing teeth."}
+  ],
+  "abilities": [
+    {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
+    {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
+    {"name": "Excavating", "cost": 20, "details": "Excavating ability."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Glide", "cost": 10, "details": "Gliding flight."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."}
+  ]
+},
+
+"TURTLES — POND TURTLE": {
+  "bio_e": 90,
+  "original": {"size_level": 1, "length_in": 5, "weight_lbs": 1, "build": "Medium"},
+  "mutant_changes_text": "Many environments; TMNT mutated from small pond turtles.",
+  "attribute_bonuses": {"PE": 2},
+  "natural_weapons": [{"name": "Bite (1D6)", "cost": 5, "details": "Bite: 1D6"}],
+  "abilities": [
+    {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 5, "details": "AR 8; +20 SDC."},
+    {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 15, "details": "AR 10; +40 SDC."},
+    {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 25, "details": "AR 12; +60 SDC."},
+    {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 35, "details": "AR 14; +80 SDC."},
+    {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
+    {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives to 500 ft."}
+  ]
+},
+
+"TURTLES — SNAPPING TURTLE": {
+  "bio_e": 50,
+  "original": {"size_level": 8, "length_in": 40, "weight_lbs": 200, "build": "Medium"},
+  "mutant_changes_text": "Snapping turtle; uses same turtle armor block as pond turtle.",
+  "attribute_bonuses": {"PS": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Claws: 1D8"},
+    {"name": "Bite (1D6)", "cost": 5, "details": "Bite: 1D6"},
+    {"name": "Bite (1D10)", "cost": 10, "details": "Bite: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 5, "details": "AR 8; +20 SDC."},
+    {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 15, "details": "AR 10; +40 SDC."},
+    {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 25, "details": "AR 12; +60 SDC."},
+    {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 35, "details": "AR 14; +80 SDC."},
+    {"name": "Digging", "cost": 5, "details": "Digging ability."},
+    {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
+    {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives to 500 ft."}
+  ]
+},
+
+"WEASEL": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 18, "weight_lbs": 1, "build": "Long"},
+  "mutant_changes_text": "Fearless carnivore; narrow body fits small holes.",
+  "attribute_bonuses": {"ME": 2, "PS": 2, "PP": 3, "Spd": 5},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage not clearly stated in source line."}
+  ],
+  "abilities": [
+    {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Can fit through very small openings."},
+    {"name": "Hyper Metabolism", "cost": 20, "details": "+2 Initiative, +2 Dodge, +1 action/round, +10% Escape Artist; requires frequent naps/constant eating; must eat own weight daily; half meat."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Digging", "cost": 10, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 20, "details": "Tunneling ability."},
+    {"name": "Excavating", "cost": 30, "details": "Excavating ability."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"FERRET": {
+  "bio_e": 80,
+  "original": {"size_level": 1, "length_in": 18, "weight_lbs": 1, "build": "Long"},
+  "mutant_changes_text": "Similar to weasels but friendlier; popular pets. Uses same ability package as Weasel per source note.",
+  "attribute_bonuses": {"MA": 2, "PS": 2, "PP": 3, "Spd": 5},
+  "natural_weapons": [
+    {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
+    {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage unclear in source line."}
+  ],
+  "abilities": [
+    {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Can fit through very small openings."},
+    {"name": "Hyper Metabolism", "cost": 20, "details": "+2 Initiative, +2 Dodge, +1 action/round, +10% Escape Artist; requires frequent naps/constant eating; must eat own weight daily; half meat."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Digging", "cost": 10, "details": "Digging ability."},
+    {"name": "Tunneling", "cost": 20, "details": "Tunneling ability."},
+    {"name": "Excavating", "cost": 30, "details": "Excavating ability."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+},
+
+"WOLVERINE": {
+  "bio_e": 60,
+  "original": {"size_level": 5, "length_in": 40, "weight_lbs": 30, "build": "Short"},
+  "mutant_changes_text": "Northern carnivore with extreme endurance; can drive off bears; adaptable predator. Human-feature cost lines garbled in source.",
+  "attribute_bonuses": {"IQ": 2, "ME": 2, "PS": 2, "PE": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D8) (climbing)", "cost": 5, "details": "Claws: 1D8; climbing."},
+    {"name": "Claws (1D12) (climbing)", "cost": 10, "details": "Claws: 1D12; climbing."},
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Bite: 1D10"}
+  ],
+  "abilities": [
+    {"name": "Tough Hide (automatic)", "cost": 0, "details": "+20 SDC; +4 save vs cold; cold does half damage."},
+    {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
+    {"name": "Digging", "cost": 10, "details": "Digging ability."},
+    {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
+  ]
+}
+
+}

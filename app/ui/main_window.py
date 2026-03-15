@@ -44,10 +44,39 @@ from app.services import (
     save_character,
     delete_character_file,
 )
-
-from app.rules.weapons import WEAPONS_CATALOG, WEAPONS_BY_NAME
-from app.rules.shields import SHIELD_CATALOG, SHIELD_BY_NAME
 from app.rules.armor import ARMOR_CATALOG, ARMOR_BY_NAME
+from app.rules.gear import GEAR_CATALOG, GEAR_BY_NAME
+from app.rules.random_names import ANIMAL_NAME_POOLS
+from app.rules.shields import SHIELD_CATALOG, SHIELD_BY_NAME
+from app.rules.skills import load_skill_rules
+from app.rules.vehicles import (
+    VEHICLES_AIRCRAFT,
+    VEHICLES_LANDCRAFT,
+    VEHICLES_LOOKUP,
+    VEHICLES_WATERCRAFT,
+)
+from app.rules.weapons import WEAPONS_CATALOG, WEAPONS_BY_NAME
+from app.rules.bioe_animals import BIOE_ANIMAL_DATA
+from app.rules.bioe_lookup import BIOE_ANIMAL_ALIASES, BIOE_DEFAULT_ANIMAL, bioe_norm
+from app.rules.physical_skill_effects import PHYSICAL_SKILL_EFFECTS
+from app.rules.human_features import HUMAN_FEATURE_OPTIONS
+from app.rules.psionic_powers import PSIONIC_POWER_OPTIONS
+from app.rules.size_levels import SIZE_LEVEL_EFFECTS, SIZE_LEVEL_FORMULAS
+from app.rules.combat import BASELINE_COMBAT, COMBAT_TRAINING_RULES
+from app.rules.tmntos_animals import TMNTOS_ANIMAL_TYPE_RANGES, TMNTOS_ANIMALS_BY_TYPE
+from app.rules.tmntos_backgrounds import (
+    TMNTOS_MUTANT_ANIMAL_ORIGINS,
+    TMNTOS_CREATOR_ORGANIZATIONS,
+    TMNTOS_WILD_ANIMAL_EDUCATION,
+)
+from app.utils.dice import eval_dice_expression, roll_dice, roll_d100
+from app.generators.random_character import (
+    pick_from_ranges,
+    random_name_for_animal,
+    roll_attribute_score,
+    roll_size_choice,
+)
+
 
 def build_arrow_icons_qss(icons_dir: str) -> str:
     """
@@ -252,6 +281,14 @@ def _pick_from_ranges(table: list[tuple[range, str]], roll: int) -> str:
             return name
     return ""
 
+def _pick_payload_from_ranges(
+    table: list[tuple[range, dict[str, str]]],
+    roll: int,
+) -> dict[str, str]:
+    for value_range, payload in table:
+        if roll in value_range:
+            return payload
+    return {"name": "", "details": ""}
 
 def _cost_to_int(cost: str) -> int:
     if not cost:
@@ -289,1989 +326,6 @@ def _cost_to_int(cost: str) -> int:
 
 
 
-# ---------------- Random Names by Animal ----------------
-ANIMAL_NAME_POOLS: dict[str, list[str]] = {
-    "POND TURTLE": [
-        "Shellshock","Slice","Manhole","SewerJack","Puck","Brick","Graff","Neon","Drift","Ruckus",
-        "Nori","Pepperoni","Tophat","Skidmark","Dojo","Scraps","Hinge","Wonton","Kickflip","Turnstile"
-    ],
-    "SNAPPING TURTLE": [
-        "Chomp","Beartrap","Lockjaw","Cruncher","Vice","Clamp","Gatorade","Ripper","Ironbite","Snapperjack",
-        "Gristle","Shredderbait","Scissorjaw","Knuckles","Bruiser","Gravel","Muzzle","Takedown","Boneclick","Jawline"
-    ],
-    "RAT": [
-        "Splinter Jr.","Cheddar","Scurry","Alleycap","Squeakbox","KnickKnack","Grease","Nibbles","Whisk","Muzzle",
-        "Rusty","Crumb","Domino","Metro","Patch","Tinfoil","Rook","Sneaker","Scamper","Trench"
-    ],
-    "RABBIT": [
-        "Hopper","Thumper","Springheel","Flips","CarrotTop","Dash","Wiggler","Dandelion","Cotton","Kickster",
-        "Binky","Speedbun","Snip","Tumble","Fuzzbyte","Moonhop","Flick","Quickstep","Pogo","Bunson"
-    ],
-    "RACCOON": [
-        "Bandit","Mask","Dumpster Duke","Pickpocket","Snackrack","Nightcap","Grabbie","Scav","AlleyKing","Patchface",
-        "Prowler","Lockpick","Scrabble","Gremlin","Slycan","Trash Panda","Swipe","Clatter","Pockets","Riggs"
-    ],
-    "FOX": [
-        "Vixen","Redline","Slick","Ember","Whisper","Tailspin","Copper","Streetglow","Saffron","Quickmatch",
-        "Mirage","Sidewind","Nighthush","Razorwink","Alleyfire","Torch","Hushpaw","Trickster","Cinder","Snapback"
-    ],
-    "WOLF": [
-        "Howl","Greyson","Packrat","Nightbite","Frost","Timber","LunaTick","Streetfang","Rumble","Ironpaw",
-        "Rookwolf","Midnight","Snarl","Tracker","Bricktooth","Shiver","Warg","Crosswalk","Clawson","Longstride"
-    ],
-    "DOG": [
-        "Barker","Scruffy","K-9","Bolt","Fetch","Muttley","Chopper","Houndini","Bodega","Goodboy",
-        "Collar","Rango","Paws","Juke","Spike","Bandana","Ruck","Tumbler","Biscuit","Bonehead"
-    ],
-    "CAT": [
-        "Scratch","AlleyWhisk","Slink","Purrlock","Nightstitch","Clawdia","Velvet","Static","Razor","Tiptoe",
-        "Flicker","Lynxie","Noodlecat","Sneer","Kite","Spindle","Hex","Mews","Glass","Shadowbox"
-    ],
-    "ALLIGATOR": [
-        "Gator","Swampjack","Chisel","Bayou","Crocblock","Wrecker","Fangrail","Mudslide","Chompston","Toothrow",
-        "Silt","Dockbite","Snapline","Riptide","Lockstep","Warth","SewerSaurus","Grin","Bucktooth","Brackish"
-    ],
-    "CROCODILE": [
-        "Croc","Nile","Scutes","Razorsmile","Crankjaw","Bonegrip","Saltfang","Dreadsnout","Teethrow","Sawtooth",
-        "RiverReaper","Scars","Gravelgrin","Breakwater","Snapcut","Knifemouth","Churn","Riptusk","Hardscale","Jawbrick"
-    ],
-    "BAT": [
-        "Echo","Sonar","Nightwing","CaveFlip","Swoop","Fang","Velvetwing","Clicker","Gloom","Nocturne",
-        "Hush","Wingtip","Radar","Blackout","Glider","Loophole","Skyrat","Umbra","Flutter","Darkstar"
-    ],
-    "BEAR": [
-        "Bruin","Grumble","Tank","Kodiak","Smash","Granite","BigRig","Mauler","Honeybad","Snowplow",
-        "Grizz","Barfight","Boulder","Tundra","Ironhug","Cinderpaw","Rumblebelly","Atlas","Freight","Growler"
-    ],
-    "SKUNK": [
-        "Funk","Stinkbomb","Pepe","Spraypaint","Reek","Smog","Onion","Sulfur","Skid","Gaslight",
-        "Boomcloud","Whiff","Nozzle","Mustard","Hazard","Skunkworks","Blackstripe","Stenchman","Reverb","Fumigator"
-    ],
-    "OTTER": [
-        "Slip","Splash","Dockside","Ripple","Wave","Current","Whiskerfloat","Driftwood","Flipfin","Seaglass",
-        "Buoy","Kelp","Clamslam","Surfside","Skimmer","Divebar","Foam","Waterline","Tides","Squeegee"
-    ],
-    "AARDVARK": [
-        "Antsy","TongueTwister","Diggs","Termite","Snout","Burrow","Velcro","Slurp","Mound","Clawmark",
-        "Dusty","Tunnelrat","Sticky","Shovel","Grubble","Rooter","Nightforage","Scoops","Sandman","Diggernaut"
-    ],
-    "FROG": [
-        "Ribbit","Hopper","Slingshot","Tad","Croak","Skipper","Bogey","Swampflip","Lily","Springjack",
-        "Gulp","Slick","Pondpunk","Bullfrog","Flycatch","Greenbean","Mudskip","Bounce","Wartlock","Plop"
-    ],
-    "TOAD": [
-        "Wart","Grumble","Toxin","Bump","Bogart","Sludge","Croaker","Toadstool","Puddle","Grub",
-        "Hopsmack","Splat","Mire","Blister","Squelch","Mossback","Swamper","Slop","Grit","Lump"
-    ],
-    "SALAMANDER": [
-        "Ember","Ash","Cinder","Regen","Slickskin","Newtrock","Glowtail","Blaze","Scorch","Kindler",
-        "Flare","Torchlet","Smolder","Sparkplug","Heatwave","Flashpoint","Salamax","Burnout","Flicker","Ignite"
-    ],
-    "NEWT": [
-        "Ripple","Skitter","Damp","Moss","Skim","Lurk","Reed","Glimmer","Dewdrop","Murk",
-        "Brook","Flick","Skulk","Peat","Shimmer","Drift","Mist","Gully","Shade","Wisp"
-    ],
-    "AXOLOTL": [
-        "Axel","Lottie","Gills","Frillz","RegenX","Pinky","Tank","Noodle","Bubble","Twitch",
-        "Hydro","Smiley","Squish","Ripplegill","Glowup","Splashy","Wiggle","Mudbud","Flow","Salamigo"
-    ],
-    "CHIMPANZEE": [
-        "Knuckle","Zip","Barrel","Scrap","Ruck","Smirk","Clutch","Brawl","Twitch","Bronx",
-        "Grip","Skirmish","Hustle","Jive","Tag","Quickhands","Sidekick","Snap","Piston","Rumble"
-    ],
-    "GORILLA": [
-        "Knox","Atlas","Tank","Thunder","Brick","Ironback","Titan","Slam","Boulder","Forge",
-        "Crush","Granite","Biggs","Stomp","Colossus","Raze","Mammoth","Havoc","Goliath","Wrecka"
-    ],
-    "ORANGUTAN": [
-        "Rust","Borneo","Longarm","Tango","Emberfur","Branch","Redwood","Saffron","Swing","Canopy",
-        "Treetop","Driftwood","Clasp","Marrow","Tangle","Vine","Copper","Latch","Grove","Knots"
-    ],
-    "ARMADILLO": [
-        "Roller","Armor","Shellshock","Plates","Tankette","Hardcase","Bolt","Crashbar","Ironhide","Rumbleball",
-        "Knuckledome","Spindle","Rivet","Shield","Buckler","Curbside","Slamroll","Ironclad","Rollo","Barricade"
-    ],
-    "BADGER": [
-        "Snarl","Diggory","Fury","Stripe","Maul","Scrapper","Gnash","Bristle","Dirtclaw","Grudge",
-        "Fangface","Brawler","Clutch","Hardscrabble","Spite","Tunnel","Spade","Ruckus","Slash","Biteback"
-    ],
-    "BEAVER": [
-        "Timber","Chisel","Dammer","Plank","Rivet","Paddle","Sawdust","Logjam","Cedar","Whittle",
-        "Bracket","Dock","Mason","Gnawson","Lumber","Trestle","Notch","Beam","Spillway","Timberjack"
-    ],
-    "BUFFALO": [
-        "Stampede","Hornet","Prairie","Dustcloud","Humpback","Bramble","Ironhorn","Driftplain","Snort","Trample",
-        "Thunderhoof","Bisonic","Shag","Plainsman","Rumblehorn","Hoofprint","Brawlback","Flint","Boulderhorn","Tundra"
-    ],
-    "BISON": [
-        "Gravelmane","Ironbuff","Plainsrage","Stamp","Dusthorn","PrairieKing","Hoofslam","Roughneck","Wildmane","Backtrail",
-        "Rumblehide","Frontier","Tusk","Brutehoof","Oxide","Plainslash","Driftmane","Snag","Bramblehorn","Brawlplain"
-    ],
-    "CAMEL": [
-        "Humpday","Dune","Spitfire","Mirage","Sandstorm","Caravan","Sirocco","Nomad","Sahara","Oasis",
-        "Tumbleweed","Longstride","Dustwalker","Cactus","Sunburn","Drydock","Bristle","Scorchstep","Trailblaze","Silt"
-    ],
-    "ELEPHANT": [
-        "Trunkline","Stamp","Ivory","BigRig","Mammoth","Tusk","Thunderstep","Wrinkle","Atlas","Stampede",
-        "Tanker","Rumbletrunk","Colossus","Pachy","Ironhide","Longnose","Howdah","Boomfoot","Gravelstep","Temple"
-    ],
-    "BOBCAT": [
-        "Bobwire","Scruff","Shorttail","Slash","Alleyclaw","Spindle","Hissfit","Razorback","Prowl","Tangle",
-        "Fangline","Whisk","Snapclaw","Thorn","Rook","Sideburn","Lynk","Slink","Patchfur","Skirmish"
-    ],
-    "LYNX": [
-        "Tuft","Frostbite","Snowclaw","Icewhisk","Glare","Longstep","Northpaw","Shiver","Hushclaw","Driftfang",
-        "Paleeye","Timberline","Ghostfur","Rime","Slashmark","Coldshot","Flurry","Talonette","Ridge","Silentstep"
-    ],
-    "CHEETAH": [
-        "Blitz","Zipline","Overdrive","Dash","Nitro","Quickstrike","Skid","Warp","Velocity","Streak",
-        "Soniclaw","Burnout","Fastlane","Flashpaw","Rapid","Slipstream","Hotfoot","Rush","Zinger","Breakneck"
-    ],
-    "COUGAR": [
-        "Puma","Ridge","Longfang","Shadowstep","Highclaw","Cliff","Striker","Nightprowl","Dustfang","Canyon",
-        "Roamer","Backtrail","Leanpaw","Rumblecat","Fangline","Quickclaw","Mesa","Snapstep","Sundown","Tracker"
-    ],
-    "JAGUAR": [
-        "Onyx","Spotlock","Jungle","Crushfang","Nightroar","Goldclaw","Prowler","Fangstorm","Rainclaw","Shadowspot",
-        "Razorhide","Sunjag","Driftclaw","Roarline","Coil","Strangle","Stealthbite","Templefang","Darkmark","Viperclaw"
-    ],
-    "LEOPARD": [
-        "Spots","Ghostspot","Treeclaw","Nightcoil","Whiptail","Fade","Dapple","Stealthpaw","Fangdash","Rooftop",
-        "Hushfang","Branchline","Quickspot","Alleyprowl","Snapfang","Glint","Silkclaw","Emberpaw","Swiftbite","Shadewalker"
-    ],
-    "LION": [
-        "Mane","Roar","Crown","Pride","Kingpin","Goldmane","Rumbleking","Sunfang","Brickmane","Rex",
-        "Roarshock","Clutchmane","Savanna","Torchmane","Rampart","Fanglord","Brass","Roarlock","Monarch","Grandleap"
-    ],
-    "TIGER": [
-        "Stripe","Shred","Ironstripe","Clawstorm","Bengal","Blazeclaw","Nightstripe","Snarlburn","Razorstripe","Emberfang",
-        "Warstripe","Crushclaw","Thunderstripe","Wildmark","Snapstripe","Fangrush","Burnstripe","Grimstripe","Slashfang","Apex"
-    ],
-    "GOAT": [
-        "Headbutt","Hornlock","Billy","Ramjam","Hoofbeat","Cliffkick","Scramble","Nanny","Ironhorn","Butthead",
-        "Ridgekick","Springhorn","Tanglebeard","Rockhop","Crag","Bash","Knucklegoat","Pebble","Hornswoggle","Mountain"
-    ],
-    "HIPPOPOTAMUS": [
-        "Hipshot","Mudjaw","Riverbrick","BigChomp","Gully","Tankmouth","Floodgate","Slamjaw","Wallow","Swampthud",
-        "Brickhide","Rumblejaw","Marsh","Breakwater","Siltstep","Grincrusher","Bogbuster","Hydrothud","Snapmud","Undertow"
-    ],
-    "HORSE": [
-        "Gallop","Stirrup","Mustang","Longstride","Hoofbeat","Bridle","ManeEvent","Colt","Trotter","Spur",
-        "Stamp","Haymaker","Trackstar","Bronco","Whinny","Reins","Buckshot","Ironhoof","Derby","Windrunner"
-    ],
-    "LEMUR": [
-        "Ringtail","Zing","Treehop","Flicktail","Maskette","Vineflip","Madagascar","Skitter","Cling","Bounceback",
-        "Longlook","Slinktail","Jester","Prism","Snaggle","Rooftree","Hopscotch","Treetrick","Sideglance","Snapvine"
-    ],
-    "GECKO": [
-        "Stickshift","Velcro","Wallride","Skitter","Grip","Crawlspace","Neonhide","Quickpad","Scalewire","Flicktail",
-        "Sideclimb","Flashscale","Limebite","Snaptoe","Rafter","Rooftile","Zipwall","Cling","Driftcrawl","Nightpad"
-    ],
-    "SKINK": [
-        "Slipscale","Gloss","Smooth","Skitterline","Scaleback","Flashhide","Copperflash","Slitherstep","Quicktail","Sunskink",
-        "Flicker","Gleam","Dashscale","Hardsheen","Skim","Slidebite","Ridgeflash","Snapscale","Slinker","Burnscale"
-    ],
-    "CHAMELEON": [
-        "Shift","Fadeout","Prism","Blend","Ghost","Hue","Mirage","Spectrum","Patch","Vanish",
-        "Chromo","Backdrop","Tint","Ripplehide","Colorlock","Maskfade","Paintjob","Sneakshade","Dazzle","Kaleido"
-    ],
-    "GILA MONSTER": [
-        "Venom","Beadbite","Toxiclaw","Heatrock","Scorchscale","Slowburn","Spinebite","Poisonjaw","Desertfang","Emberhide",
-        "Coilbite","Fangsnap","Rustscale","Biteforce","Viperjaw","Heatclaw","Toxin","Burnfang","Shockbite","Cinderclaw"
-    ],
-    "IGUANA": [
-        "Iggy","Spiketail","Sunscale","Leafbite","Crest","Thornback","Tropiclaw","Vineclimb","Heatwave","Junglejack",
-        "Scalewhip","Frill","Rooftopscale","Dayglo","Latch","Thornstripe","Palmclaw","Canopy","Sizzle","Rainclimb"
-    ],
-    "KOMODO DRAGON": [
-        "Komodo","Doomodo","Dragonjaw","Warfang","Venomking","Apexscale","Ironfang","Slaughtertail","Bloodbite","Crushscale",
-        "Doomclaw","Titanlizard","Maw","Bonefang","Reaperhide","Gritjaw","Skullscale","Deathcoil","Rumblefang","Overlord"
-    ],
-    "MARTEN": [
-        "Pineclaw","Quickfur","Timberdash","Sleek","Branchbite","Slinker","Frostfur","Treetrick","Snapvine","Ridgetail",
-        "Swiftpelt","Fangtwig","Hushfur","Clamber","Sprig","Darkpine","Skirmish","Needle","Tanglefur","Volebane"
-    ],
-    "MINK": [
-        "Velvet","Slickfur","Riverfang","Gloss","Wetnose","Shadowfur","Glidepaw","Driftfang","Ink","Streamline",
-        "Ripplefang","Blackwater","Softbite","Sheen","Dockclaw","Quickpelt","Slinkwave","Nightfur","Daggerfur","Undertow"
-    ],
-    "MOLE": [
-        "Diggler","Blindside","Dirtnap","Burrow","Shovel","Tunnelrat","Earthmover","Snout","Grub","Subterra",
-        "Mudslide","Gravelnose","Deepcore","Driftsoil","Trench","Nightburrow","Quake","Grit","Hollow","Undermine"
-    ],
-    "MONKEY": [
-        "Branch","Zipvine","Swing","Bananas","Clutch","Treejack","Quickgrip","Rooftop","Jinx","Snapvine",
-        "Dashbranch","Treetop","Skitter","Barrel","Vineshock","Highwire","Clamber","Riff","Junglejuke","Hopscotch"
-    ],
-    "BABOON": [
-        "Redfang","Bruiser","Snarlface","Mandrill","Stonejaw","Packlord","Knuckle","Ruckus","Grizzle","Brawlmark",
-        "Fanglash","Dustsnout","Warcry","Backhand","Ironcheek","Tuskjaw","Tribe","Roarback","Skullbash","Rumbleface"
-    ],
-    "MUSKRAT": [
-        "Paddle","Reed","Driftwood","Gnaw","Mudbank","Damjack","Ripple","Whisker","Brook","Chewtoy",
-        "Dockrat","Swampy","Float","Skim","Marshbite","Puddle","Nibblet","Bankshot","Slicktail","Waterlog"
-    ],
-    "PIG": [
-        "Porkchop","Snout","Trotter","Mudpie","Oinker","Brickbelly","Gristle","Hogwash","Hamfist","Sty",
-        "Rooter","Lard","Boink","Tusklet","Swill","Bellyslam","Grunt","Chopstick","Hambo","Slop"
-    ],
-    "BOAR": [
-        "Razorback","Tusk","Gore","Ironhog","Wildfang","Bristleback","Slashsnout","Mudfang","Warhog","Spinehide",
-        "Rumbletusk","Fangrush","Bloodsnout","Trample","Rootlash","Spiketail","Brawler","Hardtusk","Ravage","Thornhog"
-    ],
-    "PORCUPINE": [
-        "Quill","Pinprick","Spines","Needles","Barbwire","Spikeball","Thorn","Stickup","Hedge","Pointblank",
-        "Cactus","Spineclash","Prickles","Dartback","Burr","Shard","Spiker","Quillshock","Splinterpoint","Hedgehog"
-    ],
-    "OPOSSUM": [
-        "Roadkill","Grim","Hiss","Ghosttail","Deadpan","Playdead","Switch","Paleclaw","Nightdrop","Alleyghost",
-        "Possum","Shade","Drool","Faux","Backtrack","Hangtail","Undertaker","Twitch","Skulk","Whitefang"
-    ],
-    "SHARK": [
-        "Fin","Chum","Biteforce","Riptide","Bloodwake","Deepjaw","Hammer","Reef","Undertow","Jaws",
-        "Brine","Surge","Trawler","Coldfin","Tidemark","Breakwater","Slashfin","Abyss","Mako","Gnasher"
-    ],
-    "SHEEP": [
-        "Wooly","Ramble","Headbutt","Fleece","Lambchop","Cotton","Bleat","Fluff","Hornet","Shear",
-        "Hoofball","Pasture","Mutton","Snowcoat","Baa-dude","Cloud","Woolshock","Ramrod","Ewe-turn","Haystack"
-    ],
-    "SQUIRREL": [
-        "Nutjob","Acorn","Ziptail","Treebolt","Skitter","Bushytail","Scurry","Rooftop","Twitch","Parkour",
-        "Nibble","Whiptail","Branchdash","Chatter","Quicknut","Sideclimb","Gnawjack","Flip","Wiretail","Speednut"
-    ],
-    "WEASEL": [
-        "Sneak","Sliver","Fanglet","Quickfang","Slipknife","Razorfur","Coil","Twitchfang","Slink","Fangdash",
-        "Slim","Dagger","Shank","Fangwink","Leanbite","Needlefang","Whiplash","Quickslash","Narrow","Viperfur"
-    ],
-    "FERRET": [
-        "Bandit","Wiggle","Scruff","Noodle","Quickburrow","Dashfur","Mask","Twitch","Scamper","Longshot",
-        "Fuzz","Snapfur","Rocket","Slalom","Whisk","Zinger","Tunnelzip","Mischief","Fidget","Skid"
-    ],
-    "WOLVERINE": [
-        "Fury","Ironclaw","Maul","Raze","Frostfang","Snarl","Breakclaw","Warfang","Havoc","Ridgeclaw",
-        "Fangstorm","Brawlhide","Savage","Grimclaw","Ripper","Crushfang","Doomclaw","Nightmaul","Backbreaker","Rampage"
-    ],
-    "MOUSE": [
-        "Squeak","Pip","Nibbler","Tiny","Scamper","Crumb","Whisk","Cheddar","Skitter","Peep",
-        "Button","Dash","Snip","Flick","Trickle","Slink","Pebble","Rattle","Tippy","Whisp"
-    ],
-    "GERBIL": [
-        "Zippy","Sanddash","Pebbles","Whirl","Dune","Twitcher","Scamperjack","Burrowbug","Flip","Skip",
-        "Sunpaw","Nibblet","Zoomer","Sprint","Fidget","Skidder","Hopper","Dusty","Rustle","Quicktail"
-    ],
-    "HAMSTER": [
-        "Roller","Cheeks","Wheelie","Nugget","Fuzzball","Spin","Chompette","Biscuit","Tubby","Dashball",
-        "Puff","Snacker","Peanut","Turbo","Crumbler","Hopperton","Snackjack","Whiskers","Rollout","Squeaker"
-    ],
-    "GUINEA PIG": [
-        "Gizmo","Squealer","Pudge","Fuzz","Pebble","Pipsqueak","Chatter","Sniff","Whistle","Cabbage",
-        "Buttonnose","Tater","Rumblecheek","Nibblebug","Fritter","Puffball","Patch","Nuzzle","Toot","Scooter"
-    ],
-    "PIKA": [
-        "Peak","Yodel","Cliffdash","Frosthop","Alpine","Scree","Pebblesnap","Rockhopper","Summit","Skitterpeak",
-        "Whistlejaw","Crag","Snowblink","Ridgehop","Boulderbit","Highnote","Mountainzip","Chillhop","Quickpeak","Stonewhisk"
-    ],
-}
-
-
-# ---------------- Vehicles (from scan) ----------------
-VEHICLES_LANDCRAFT: list[dict[str, str]] = [
-    {"name": "Skateboard/Scooter", "range": "—", "top_speed": "15 mph", "sdc": "25", "cost": "$250"},
-    {"name": "Bicycle", "range": "—", "top_speed": "25 mph", "sdc": "60", "cost": "$500"},
-    {"name": "Dirt Motorbike", "range": "100 miles", "top_speed": "75 mph", "sdc": "100", "cost": "$2k"},
-    {"name": "Street Motorcycle", "range": "200 miles", "top_speed": "100 mph", "sdc": "125", "cost": "$5k"},
-    {"name": "Speed Motorcycle", "range": "150 miles", "top_speed": "150 mph", "sdc": "100", "cost": "$10k"},
-    {"name": "Cruiser Motorcycle", "range": "250 miles", "top_speed": "125 mph", "sdc": "150", "cost": "$15k"},
-    {"name": "Compact Car", "range": "350 miles", "top_speed": "100 mph", "sdc": "250", "cost": "$20k"},
-    {"name": "Sedan", "range": "300 miles", "top_speed": "120 mph", "sdc": "350", "cost": "$25k"},
-    {"name": "Luxury Sedan", "range": "300 miles", "top_speed": "120 mph", "sdc": "375", "cost": "$50k+"},
-    {"name": "Sports Car", "range": "250 miles", "top_speed": "150 mph", "sdc": "300", "cost": "$50k+"},
-    {"name": "Mini-Van", "range": "350 miles", "top_speed": "100 mph", "sdc": "350", "cost": "$30k"},
-    {"name": "Full-Sized Van", "range": "200 miles", "top_speed": "120 mph", "sdc": "375", "cost": "$30k"},
-    {"name": "Sport Utility Vehicle", "range": "200 miles", "top_speed": "120 mph", "sdc": "400", "cost": "$35k"},
-    {"name": "Truck (4WD)", "range": "200 miles", "top_speed": "120 mph", "sdc": "425", "cost": "$30k"},
-    {"name": "Moving Truck", "range": "500 miles", "top_speed": "75 mph", "sdc": "375", "cost": "$40k"},
-    {"name": "Semi-Truck", "range": "400 miles", "top_speed": "100 mph", "sdc": "600", "cost": "$100k"},
-]
-
-VEHICLES_WATERCRAFT: list[dict[str, str]] = [
-    {"name": "*Surfboard", "range": "—", "top_speed": "15 mph", "sdc": "30", "cost": "$500"},
-    {"name": "Canoe/Kayak", "range": "—", "top_speed": "10 mph", "sdc": "60", "cost": "$1k"},
-    {"name": "Rowboat", "range": "—", "top_speed": "10 mph", "sdc": "100", "cost": "$1.5k"},
-    {"name": "*Sailboat, Small", "range": "—", "top_speed": "15 mph", "sdc": "150", "cost": "$10k"},
-    {"name": "*Sailboat, Medium", "range": "—", "top_speed": "20 mph", "sdc": "300", "cost": "$25k"},
-    {"name": "Jet Ski", "range": "50 miles", "top_speed": "40 mph", "sdc": "75", "cost": "$5k"},
-    {"name": "Fanboat", "range": "100 miles", "top_speed": "50 mph", "sdc": "250", "cost": "$10k"},
-    {"name": "Motorboat, Small", "range": "100 miles", "top_speed": "30 mph", "sdc": "175", "cost": "$12k"},
-    {"name": "Motorboat, Medium", "range": "500 miles", "top_speed": "40 mph", "sdc": "350", "cost": "$30k"},
-    {"name": "Speedboat", "range": "50 miles", "top_speed": "80 mph", "sdc": "250", "cost": "$40k"},
-    {"name": "Yacht, Medium", "range": "500 miles", "top_speed": "40 mph", "sdc": "375", "cost": "$100k"},
-    {"name": "Yacht, Large", "range": "1k miles", "top_speed": "40 mph", "sdc": "500", "cost": "$500k"},
-]
-
-VEHICLES_AIRCRAFT: list[dict[str, str]] = [
-    {"name": "*Hot Air Balloon", "range": "25 miles", "top_speed": "10 mph", "sdc": "50", "cost": "$20k"},
-    {"name": "*Hang Glider", "range": "50 miles", "top_speed": "40 mph", "sdc": "50", "cost": "$5k"},
-    {"name": "*Glider", "range": "250 miles", "top_speed": "75 mph", "sdc": "150", "cost": "$25k"},
-    {"name": "Jet Pack", "range": "25 miles", "top_speed": "100 mph", "sdc": "75", "cost": "$100k"},
-    {"name": "Ultralight", "range": "250 miles", "top_speed": "75 mph", "sdc": "100", "cost": "$10k"},
-    {"name": "Biplane, 2-seater", "range": "400 miles", "top_speed": "150 mph", "sdc": "250", "cost": "$50k"},
-    {"name": "Private Plane, Small", "range": "600 miles", "top_speed": "150 mph", "sdc": "300", "cost": "$100k"},
-    {"name": "Helicopter, Small", "range": "500 miles", "top_speed": "200 mph", "sdc": "250", "cost": "$750k"},
-    {"name": "Helicopter, Medium", "range": "500 miles", "top_speed": "200 mph", "sdc": "400", "cost": "$2mil"},
-    {"name": "Bush Plane, 4-seater", "range": "700 miles", "top_speed": "175 mph", "sdc": "350", "cost": "$500k"},
-    {"name": "Bush Plane, 10-seater", "range": "1000 miles", "top_speed": "200 mph", "sdc": "600", "cost": "$2mil"},
-    {"name": "Private Jet", "range": "1500 miles", "top_speed": "500 mph", "sdc": "750", "cost": "$5mil"},
-]
-
-VEHICLES_LOOKUP: dict[str, dict[str, str]] = {
-    v["name"]: v for v in (VEHICLES_LANDCRAFT + VEHICLES_WATERCRAFT + VEHICLES_AIRCRAFT)
-}
-
-# ---------------- Equipment catalogs ----------------
-
-GEAR_CATALOG: list[dict[str, Any]] = [
-    {"name": "Handgun Ammo (50 rds) - Low/Med (.22/.32/.38/9mm)", "cost": "$15", "details": "Ammo"},
-    {"name": "Handgun Ammo (50 rds) - Heavy (.38+P/.357/.45)", "cost": "$30", "details": "Ammo"},
-    {"name": "Rifle/Shotgun Ammo (20 rds) - Low/Med (.223/5.56/7.62)", "cost": "$10", "details": "Ammo"},
-    {"name": "Rifle/Shotgun Ammo (20 rds) - Heavy (.308/12-gauge)", "cost": "$20", "details": "Ammo"},
-    {"name": "Tie Tack Mic", "cost": "$150", "details": "Bugs (Hidden Mics)"},
-    {"name": "Contact Mic", "cost": "$300", "details": "Bugs (Hidden Mics)"},
-    {"name": "Keyhole/Tube Mic", "cost": "$300", "details": "Bugs (Hidden Mics)"},
-    {"name": "Room Bugs", "cost": "$150–$500", "details": "Bugs (Hidden Mics)"},
-    {"name": "Specialized Micro Bugs", "cost": "$200–$1000", "details": "Bugs (Hidden Mics)"},
-    {"name": "GPS Tracker", "cost": "$100", "details": "Tracking Devices"},
-    {"name": "Acoustic Noise Generator", "cost": "$900", "details": "Bug Detectors"},
-    {"name": "Broadband Detector", "cost": "$500", "details": "Bug Detectors"},
-    {"name": "Radio Detector", "cost": "$400", "details": "Bug Detectors"},
-    {"name": "Binoculars (300 yd)", "cost": "$250", "details": "Optics"},
-    {"name": "Binoculars (1500 yd)", "cost": "$500", "details": "Optics"},
-    {"name": "Binoculars (3000 yd)", "cost": "$1000", "details": "Optics"},
-    {"name": "Weapon Scope", "cost": "$250–$2000", "details": "Optics"},
-    {"name": "Nightvision Goggles (100 yd)", "cost": "$10,000", "details": "Optics"},
-    {"name": "Nightvision Binoculars (100 yd)", "cost": "$10,000", "details": "Optics"},
-    {"name": "Nightvision Monocular (100 yd)", "cost": "$1500", "details": "Optics"},
-    {"name": "Nightvision Weapon Sight (100 yd)", "cost": "$2000", "details": "Optics"},
-    {"name": "Nightvision Tripod Mount", "cost": "$2000", "details": "Optics"},
-    {"name": "Thermal Imaging Goggles (2000 yd)", "cost": "$30,000", "details": "Optics"},
-    {"name": "Thermal Imaging Binoculars (2000 yd)", "cost": "$30,000", "details": "Optics"},
-    {"name": "Thermal Imaging Monocular (2000 yd)", "cost": "$28,000", "details": "Optics"},
-    {"name": "Thermal Imaging Weapon Sight (2000 yd)", "cost": "$20,000", "details": "Optics"},
-    {"name": "Explosives Detector", "cost": "$2000", "details": "Detection Equipment"},
-    {"name": "Letter Bomb Detector", "cost": "$1000", "details": "Detection Equipment"},
-    {"name": "Radar Signal Detector", "cost": "$1000", "details": "Detection Equipment"},
-    {"name": "Motion Detector", "cost": "$250", "details": "Detection Equipment"},
-    {"name": "Microwave Fence System", "cost": "$50,000", "details": "Detection Equipment"},
-    {"name": "Digital Camera", "cost": "$250", "details": "Recording"},
-    {"name": "DSLR", "cost": "$750", "details": "Recording"},
-    {"name": "Lavalier Mic", "cost": "$500", "details": "Recording"},
-    {"name": "Handheld Mic", "cost": "$500", "details": "Recording"},
-    {"name": "Video Camera", "cost": "$750", "details": "Recording"},
-    {"name": "Tablet", "cost": "$1000", "details": "Computers"},
-    {"name": "Laptop", "cost": "$1500", "details": "Computers"},
-    {"name": "Desktop", "cost": "$2000", "details": "Computers"},
-    {"name": "Pro Desktop", "cost": "$2500", "details": "Computers"},
-    {"name": "Mobile Phone", "cost": "$250", "details": "Communications"},
-    {"name": "Smartphone", "cost": "$1000", "details": "Communications"},
-    {"name": "Walkie-Talkie (5 mi)", "cost": "$250", "details": "Communications"},
-    {"name": "Walkie-Talkie (10 mi)", "cost": "$500", "details": "Communications"},
-    {"name": "CB Radio (5 mi)", "cost": "$1000", "details": "Communications"},
-    {"name": "Police Scanner (10 mi)", "cost": "$2000", "details": "Communications"},
-    {"name": "Field Radio (50 mi / global satellite)", "cost": "$5000", "details": "Communications"},
-    {"name": "Radio Jammer (handheld)", "cost": "$500", "details": "Communications"},
-    {"name": "Radio Jammer (backpack)", "cost": "$25,000", "details": "Communications"},
-    {"name": "Radio Jammer (large)", "cost": "$75,000", "details": "Communications"},
-    {"name": "Armored Attaché Case (AR 15, SDC 100)", "cost": "$500", "details": "Adventuring"},
-    {"name": "Pepper Spray", "cost": "$50", "details": "Adventuring"},
-    {"name": "Tear Gas Spray", "cost": "$25", "details": "Adventuring"},
-    {"name": "Electro-Adhesive Pads", "cost": "$1500", "details": "Adventuring"},
-    {"name": "Heavy Duty Flashlight (1D6)", "cost": "$200", "details": "Adventuring"},
-    {"name": "Handcuffs (Novelty)", "cost": "$50", "details": "Adventuring"},
-    {"name": "Handcuffs (Law Enforcement)", "cost": "$100", "details": "Adventuring"},
-    {"name": "Illuminating Penlight", "cost": "$100", "details": "Adventuring"},
-    {"name": "Nightstick (1D6+1)", "cost": "$50", "details": "Adventuring"},
-    {"name": "Sap Gloves (+2 damage)", "cost": "$50", "details": "Adventuring"},
-    {"name": "Space Suit (US)", "cost": "$500,000", "details": "Adventuring"},
-    {"name": "Space Suit (Russian)", "cost": "$50,000", "details": "Adventuring"},
-    {"name": "Stun Gun", "cost": "$100", "details": "Adventuring"},
-    {"name": "Taser", "cost": "$1000", "details": "Adventuring"},
-    {"name": "First Aid Pouch", "cost": "$100", "details": "Adventuring"},
-    {"name": "Multitool", "cost": "$100", "details": "Adventuring"},
-    {"name": "Lock Pick Set", "cost": "$100", "details": "Adventuring"},
-    {"name": "Lock Pick Gun", "cost": "$3000", "details": "Adventuring"},
-    {"name": "Repair Kit", "cost": "$250", "details": "Adventuring"},
-    {"name": "Medical Kit", "cost": "$500", "details": "Adventuring"},
-]
-
-# ===================== ADD THESE NEW CONSTANTS + LOOKUPS (place near your other catalogs/constants) =====================
-
-HUMAN_FEATURE_OPTIONS: list[tuple[str, int]] = [
-    ("None (0 Bio-E)", 0),
-    ("Partial (5 Bio-E)", 5),
-    ("Full (10 Bio-E)", 10),
-]
-
-# Psionics: you said "general" and "limit to 5 available" for now.
-# Costs were not specified; using a simple placeholder (10 Bio-E each). Adjust freely.
-PSIONIC_POWER_OPTIONS: list[tuple[str, int]] = [
-    ("None (0 Bio-E)", 0),
-    ("Mind Block (10 Bio-E)", 10),
-    ("Telepathy (10 Bio-E)", 10),
-    ("Object Read (10 Bio-E)", 10),
-    ("Sixth Sense (10 Bio-E)", 10),
-    ("Empathy (10 Bio-E)", 10),
-]
-
-# Bio-E animal data (PLACEHOLDERS). Expand this table as you add real animal rules.
-# - bio_e: starting points granted when animal is selected
-# - original: original animal characteristics to display
-# - mutant_changes_text: freeform text shown in "Mutant changes & Costs"
-# - natural_weapons: up to 5 options (name, cost, details)
-# - abilities: up to 10 options (name, cost, details)
-# - attribute_bonuses: optional dict shown in Attribute Bonuses display
-
-BIOE_ANIMAL_DATA: dict[str, dict[str, Any]] = {
-
-# (i.e., between the opening { and closing } of that dict)
-
-    "AARDVARK": {
-        "bio_e": 60,
-        "original": {"size_level": 5, "length_in": 48, "weight_lbs": 40, "build": "Medium"},
-        "mutant_changes_text": (
-            "Aardvarks are anteater-like insectivores adapted to feeding on ants/termites; built for digging; long sticky tongue."
-        ),
-        "attribute_bonuses": {"PS": 2, "PP": 1, "PE": 2},
-        "natural_weapons": [{"name": "Claws (1D6 damage)", "cost": 5, "details": "Claws: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced olfactory sense."},
-            {"name": "Digging", "cost": 5, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
-        ],
-    },
-
-    "ALLIGATOR & CROCODILE": {
-        "bio_e": 40,
-        "original": {"size_level": 9, "length_in": 240, "weight_lbs": 175, "build": "Long"},
-        "mutant_changes_text": (
-            "Large swamp-dwelling carnivorous reptiles with protective scales and long jaws of conical teeth."
-        ),
-        "attribute_bonuses": {"PS": 3, "PE": 1, "Spd": 1},
-        "natural_weapons": [
-            {"name": "Teeth (1D8 damage)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12 damage)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Quick Run (1/min)", "cost": 10, "details": "Double move as a move action; +2 Initiative & Dodge for rest of round."},
-            {"name": "Hold Breath", "cost": 5, "details": "Can hold breath for extended periods."},
-            {"name": "Nightvision", "cost": 5, "details": "See in low light/darkness."},
-            {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 10, "details": "AR 8; +20 SDC."},
-            {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 20, "details": "AR 10; +40 SDC."},
-            {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 30, "details": "AR 12; +60 SDC."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "AMPHIBIANS — FROG & TOAD": {
-        "bio_e": 80,
-        "original": {"size_level": 2, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
-        "mutant_changes_text": (
-            "Many species; aquatic or ground/tree. Insect-eaters with sticky tongues; some secrete toxins."
-        ),
-        "attribute_bonuses": {"PP": 2, "Spd": 2},
-        "natural_weapons": [],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives depths to 400 ft."},
-            {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
-            {"name": "Poison Touch", "cost": 15, "details": "Save vs Poison; fail: 1D6 HP + paralysis 1D6 rounds; success: -1 S/P/D 1D6 rounds; cumulative."},
-        ],
-    },
-
-    "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL": {
-        "bio_e": 70,
-        "original": {"size_level": 2, "length_in": 29, "weight_lbs": 5.5, "build": "Long"},
-        "mutant_changes_text": (
-            "Smooth-skinned long-tailed amphibians; famed for regeneration. Terrestrial near water, semi-aquatic, or primarily aquatic."
-        ),
-        "attribute_bonuses": {"PP": 1, "PE": 2},
-        "natural_weapons": [{"name": "Teeth (1D6 damage)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Regeneration (automatic)", "cost": 0, "details": "Regrows limbs/organs; +20% save vs coma/death; recover 1 HP + 3 SDC per hour; severe injury effects temporary (6D6 hours)."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."},
-            {"name": "Master Swimmer", "cost": 10, "details": "Swimming skill or +20%; survives depths to 400 ft."},
-            {"name": "Gills", "cost": 5, "details": "Breathes underwater."},
-        ],
-    },
-
-    "APES — CHIMPANZEE": {
-        "bio_e": 25,
-        "original": {"size_level": 8, "length_in": 60, "weight_lbs": 175, "build": "Medium"},
-        "mutant_changes_text": (
-            "Great apes are closest relatives to humans; already have partial hands/upright stance/human-like looks. Attribute bonus text garbled in source."
-        ),
-        "attribute_bonuses": {},
-        "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
-            {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "APES — GORILLA": {
-        "bio_e": 10,
-        "original": {"size_level": 11, "length_in": 72, "weight_lbs": 800, "build": "Medium"},
-        "mutant_changes_text": "Gorilla baseline; weight listed as 200–800 (roll 2D4×100). Attribute bonuses garbled in source.",
-        "attribute_bonuses": {},
-        "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
-            {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "APES — ORANGUTAN": {
-        "bio_e": 20,
-        "original": {"size_level": 9, "length_in": 54, "weight_lbs": 150, "build": "Medium"},
-        "mutant_changes_text": "Orangutan baseline; attribute bonuses garbled in source (mentions social/mental boosts and PS +2 but unclear).",
-        "attribute_bonuses": {},
-        "natural_weapons": [{"name": "Fists (1D6 damage)", "cost": 5, "details": "Punch/fist: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sensitivity."},
-            {"name": "Prehensile Feet", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "ARMADILLO": {
-        "bio_e": 60,
-        "original": {"size_level": 5, "length_in": 36, "weight_lbs": 30, "build": "Medium"},
-        "mutant_changes_text": "Naturally armored mammal (nine-banded armadillo). Length listed as 2 ft + 1 ft tail; weight 20–30 lbs.",
-        "attribute_bonuses": {"PS": 2, "PE": 3},
-        "natural_weapons": [{"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; useful for climbing."}],
-        "abilities": [
-            {"name": "Natural Armor: Light (AR 10, +20 SDC)", "cost": 5, "details": "AR 10; +20 SDC."},
-            {"name": "Natural Armor: Medium (AR 12, +40 SDC)", "cost": 10, "details": "AR 12; +40 SDC."},
-            {"name": "Natural Armor: Heavy (AR 14, +60 SDC)", "cost": 20, "details": "AR 14; +60 SDC."},
-            {"name": "Digging", "cost": 5, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
-        ],
-    },
-
-    "BADGER": {
-        "bio_e": 65,
-        "original": {"size_level": 4, "length_in": 28, "weight_lbs": 16, "build": "Short"},
-        "mutant_changes_text": "Squat carnivores that dig into underground nests of prey.",
-        "attribute_bonuses": {"PS": 3, "PP": 1, "PE": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D8)", "cost": 5, "details": "Claws: 1D8"},
-            {"name": "Teeth (1D8)", "cost": 75, "details": "Bite: 1D8 (cost appears unusually high; kept as written)."},
-        ],
-        "abilities": [
-            {"name": "Poison Resistance", "cost": 5, "details": "Bonus to save vs venoms/poisons."},
-            {"name": "Digging", "cost": 5, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-        ],
-    },
-
-    "BAT": {
-        "bio_e": 70,
-        "original": {"size_level": 1, "length_in": 24, "weight_lbs": 2.25, "build": "Medium"},
-        "mutant_changes_text": "Flying mammals; sonar is useful because they are nocturnal and live in dark caves. Length is wingspan (1–2 ft).",
-        "attribute_bonuses": {"IQ": 1, "ME": 1, "PP": 2},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Sonar", "cost": 5, "details": "Echolocation/sonar."},
-        ],
-    },
-
-    "BEAR — BLACK BEAR": {
-        "bio_e": 15,
-        "original": {"size_level": 14, "length_in": None, "weight_lbs": 400, "build": "Medium"},
-        "mutant_changes_text": "Bear baseline (black bear). Weight 300–400 lbs. Build not stated in source; treated as Medium.",
-        "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-            {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "BEAR — GRIZZLY": {
-        "bio_e": 10,
-        "original": {"size_level": 16, "length_in": None, "weight_lbs": 600, "build": "Medium"},
-        "mutant_changes_text": "Grizzly bear; uses same Natural Weapons/Abilities as Black Bear entry.",
-        "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-            {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "BEAR — BROWN (KODIAK)": {
-        "bio_e": 5,
-        "original": {"size_level": 17, "length_in": None, "weight_lbs": 900, "build": "Medium"},
-        "mutant_changes_text": "Brown/Kodiak bear; uses same Natural Weapons/Abilities as Black Bear entry.",
-        "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath", "cost": 10, "details": "Hold Breath (note: polar bear version costs 5 in source)."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-            {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "BEAR — POLAR": {
-        "bio_e": 0,
-        "original": {"size_level": 18, "length_in": 108, "weight_lbs": 1000, "build": "Medium"},
-        "mutant_changes_text": "Polar bear; same as bear baseline, except Hold Breath costs 5 Bio-E per note.",
-        "attribute_bonuses": {"PS": 8, "PP": 1, "PE": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath", "cost": 5, "details": "Hold Breath (polar bear special cost note)."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-            {"name": "Advanced Sight", "cost": 5, "details": "Enhanced vision."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "BEAVER": {
-        "bio_e": 50,
-        "original": {"size_level": 6, "length_in": 48, "weight_lbs": 60, "build": "Short"},
-        "mutant_changes_text": "Dam-building rodent with wide flat tail; 'natural engineers' and family oriented.",
-        "attribute_bonuses": {"IQ": 2, "ME": 2, "MA": 2, "PS": 2},
-        "natural_weapons": [
-            {"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D12; can chew wood/clay/crumbly stone 1 in/round; hard plastics/ceramics/concrete/mortar at half speed."},
-        ],
-        "abilities": [
-            {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
-            {"name": "Tunneling", "cost": 5, "details": "Tunneling ability."},
-            {"name": "Advanced Excavating", "cost": 10, "details": "Instinctive permanent structures; double normal time."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-            {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
-        ],
-    },
-
-    "BIRDS — CHICKEN": {
-        "bio_e": 75,
-        "original": {"size_level": 3, "length_in": 12, "weight_lbs": 10, "build": "Short"},
-        "mutant_changes_text": "Domesticated; bred for food/eggs; one of the few that can see ultraviolet.",
-        "attribute_bonuses": {},
-        "natural_weapons": [
-            {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."},
-        ],
-    },
-
-    "BIRDS — CROW / RAVEN": {
-        "bio_e": 70,
-        "original": {"size_level": 3, "length_in": 24, "weight_lbs": 8, "build": "Medium"},
-        "mutant_changes_text": "Intelligent social scavengers; live off crops/foraging. Includes noise/voice mimicry notes.",
-        "attribute_bonuses": {"IQ": 4, "ME": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D6) (climbing)", "cost": 5, "details": "Talons: 1D6; climbing."},
-            {"name": "Beak (1D8)", "cost": 5, "details": "Beak: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Noise Mimicry / Effects", "cost": 0, "details": "Imitate noises; with full speech can imitate voices; +20% Impersonation bonus but still need skill."},
-            {"name": "Flight", "cost": 10, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "BIRDS — PARROT": {
-        "bio_e": 70,
-        "original": {"size_level": 3, "length_in": 24, "weight_lbs": 8, "build": "Medium"},
-        "mutant_changes_text": "Colorful birds; many imitate voices. Uses same weapons/abilities pattern as Crow/Raven (including mimicry).",
-        "attribute_bonuses": {"IQ": 2, "MA": 2, "PB": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D6) (climbing)", "cost": 5, "details": "Talons: 1D6; climbing."},
-            {"name": "Beak (1D8)", "cost": 5, "details": "Beak: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Noise Mimicry / Effects", "cost": 0, "details": "Imitate noises; with full speech can imitate voices; +20% Impersonation bonus but still need skill."},
-            {"name": "Flight", "cost": 10, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "BIRDS — DUCK": {
-        "bio_e": 75,
-        "original": {"size_level": 3, "length_in": 24, "weight_lbs": 15, "build": "Medium"},
-        "mutant_changes_text": "Duck baseline (waterfowl). Hold Breath is automatic.",
-        "attribute_bonuses": {"PE": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-            {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
-            {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."},
-        ],
-    },
-
-    "BIRDS — GOOSE": {
-        "bio_e": 70,
-        "original": {"size_level": 4, "length_in": 36, "weight_lbs": 25, "build": "Medium"},
-        "mutant_changes_text": "Goose (same waterfowl package as Duck).",
-        "attribute_bonuses": {"MA": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-            {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
-            {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."},
-        ],
-    },
-
-    "BIRDS — SWAN": {
-        "bio_e": 65,
-        "original": {"size_level": 5, "length_in": 60, "weight_lbs": 40, "build": "Medium"},
-        "mutant_changes_text": "Swan (same waterfowl package as Duck).",
-        "attribute_bonuses": {"PB": 3},
-        "natural_weapons": [
-            {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-            {"name": "Float", "cost": 5, "details": "Can sleep/rest floating on water."},
-            {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."},
-        ],
-    },
-
-    "BIRDS — HAWK / FALCON": {
-        "bio_e": 70,
-        "original": {"size_level": 3, "length_in": 24, "weight_lbs": 15, "build": "Medium"},
-        "mutant_changes_text": "Predatory birds with curved beaks/talons/sharp eyesight; dive attacks. Beak line truncated in source.",
-        "attribute_bonuses": {"PS": 2, "PP": 4, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D8) (climbing)", "cost": 5, "details": "Talons: 1D8; climbing."},
-            {"name": "Talons (1D10) (climbing)", "cost": 10, "details": "Talons: 1D10; climbing."},
-        ],
-        "abilities": [],
-    },
-
-    "BIRDS — EAGLE": {
-        "bio_e": 65,
-        "original": {"size_level": 4, "length_in": 36, "weight_lbs": 25, "build": "Medium"},
-        "mutant_changes_text": "Eagle; other features match Hawk/Falcon block; abilities text broken in source at this point.",
-        "attribute_bonuses": {"PS": 6, "PP": 2, "PB": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D8) (climbing)", "cost": 5, "details": "Talons: 1D8; climbing."},
-            {"name": "Talons (1D10) (climbing)", "cost": 10, "details": "Talons: 1D10; climbing."},
-        ],
-        "abilities": [],
-    },
-
-    "BIRDS — PENGUIN": {
-        "bio_e": 53,
-        "original": {"size_level": 7, "length_in": 42, "weight_lbs": 90, "build": "Short"},
-        "mutant_changes_text": "Flightless diving birds adapted to cold climates; smaller temperate species exist.",
-        "attribute_bonuses": {"MA": 2, "PE": 2},
-        "natural_weapons": [{"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"}],
-        "abilities": [
-            {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Ultraviolet Vision", "cost": 5, "details": "Can see UV spectrum."},
-            {"name": "Insulating Water-Repellent Feathers", "cost": 5, "details": "Cold does half damage; +10 SDC."},
-            {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survive depths to 500 ft."},
-        ],
-    },
-
-    "BIRDS — PIGEON": {
-        "bio_e": 85,
-        "original": {"size_level": 2, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
-        "mutant_changes_text": "Pigeon baseline for city birds/doves/game birds. Beak damage unclear in source line.",
-        "attribute_bonuses": {"PE": 4},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — DOVE": {
-        "bio_e": 90,
-        "original": {"size_level": 1, "length_in": 12, "weight_lbs": 3, "build": "Medium"},
-        "mutant_changes_text": "Dove variant (same package as Pigeon).",
-        "attribute_bonuses": {"PE": 2, "PB": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — WILD GAME BIRDS (GROUSE / PARTRIDGE / PHEASANT / QUAIL)": {
-        "bio_e": 80,
-        "original": {"size_level": 3, "length_in": 36, "weight_lbs": 20, "build": "Medium"},
-        "mutant_changes_text": "Wild game bird variant (same package as Pigeon).",
-        "attribute_bonuses": {"PE": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (damage unclear)", "cost": 5, "details": "Beak damage not clearly stated in source line."},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 10, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — SMALL WILD BIRDS": {
-        "bio_e": 90,
-        "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
-        "mutant_changes_text": "Small birds that feed on grains/seeds/fruits/insects; includes many urban/suburban forest species.",
-        "attribute_bonuses": {"PP": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — TEMPERATE SONGBIRDS": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
-        "mutant_changes_text": "Temperate songbirds.",
-        "attribute_bonuses": {"MA": 2, "PP": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Natural Singer (automatic)", "cost": 0, "details": "Sing skill or +20%."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — TROPICAL SONGBIRDS": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 12, "weight_lbs": 1.25, "build": "Medium"},
-        "mutant_changes_text": "Tropical songbirds.",
-        "attribute_bonuses": {"PP": 2, "PB": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Talons (1D4) (climbing)", "cost": 5, "details": "Talons: 1D4; climbing."},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Natural Singer (automatic)", "cost": 0, "details": "Sing skill or +20%."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-        ],
-    },
-
-    "BIRDS — TURKEY": {
-        "bio_e": 60,
-        "original": {"size_level": 5, "length_in": 48, "weight_lbs": 40, "build": "Medium"},
-        "mutant_changes_text": "Domestic turkey is flightless and bred for food; wild turkeys are leaner/faster and can fly.",
-        "attribute_bonuses": {"PP": 2, "Spd": 6},
-        "natural_weapons": [
-            {"name": "Talons (1D6)", "cost": 5, "details": "Talons: 1D6"},
-            {"name": "Spurs (1D10)", "cost": 10, "details": "Spurs: 1D10"},
-            {"name": "Beak (1D6)", "cost": 5, "details": "Beak: 1D6"},
-        ],
-        "abilities": [
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Flight", "cost": 20, "details": "True flight."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "BUFFALO & BISON": {
-        "bio_e": 0,
-        "original": {"size_level": 19, "length_in": 132, "weight_lbs": 2000, "build": "Medium"},
-        "mutant_changes_text": "Bison are huge North American grazers with a shoulder hump; true buffalo are Africa/Asia and lack the hump.",
-        "attribute_bonuses": {"PS": 6, "Spd": 4},
-        "natural_weapons": [{"name": "Horns (1D8)", "cost": 5, "details": "Horns: 1D8"}],
-        "abilities": [
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-        ],
-    },
-
-    "CAMEL": {
-        "bio_e": 0,
-        "original": {"size_level": 18, "length_in": 132, "weight_lbs": 1000, "build": "Medium"},
-        "mutant_changes_text": "Desert pack animals known for water storage; often short-tempered.",
-        "attribute_bonuses": {"PS": 2, "PE": 4, "Spd": 6},
-        "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Spit", "cost": 5, "details": "12 ft; +2 Strike; called shot to eyes blinds 1D4 rounds."},
-            {"name": "Water Storage", "cost": 10, "details": "2 days per gallon; store up to 10 gallons; drink/store in 12 minutes."},
-        ],
-    },
-
-    "CANINES — DOGS": {
-        "bio_e": 65,
-        "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Medium"},
-        "mutant_changes_text": (
-            "Many breeds; baseline is average mongrel. Bio-E: 65 (reduce by 5 for each step above Size Level 3). "
-            "Attribute bonuses vary by size: SL 3–5: IQ+2 MA+2 PP+2 Spd+2; SL 6–8: IQ+2 MA+2 PS+2 Spd+2."
-        ),
-        "attribute_bonuses": {},
-        "natural_weapons": [
-            {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
-            {"name": "Teeth (1D10)", "cost": 10, "details": "Bite: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Digging", "cost": 10, "details": "Digging ability."},
-            {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "CANINES — FOX": {
-        "bio_e": 60,
-        "original": {"size_level": 3, "length_in": 40, "weight_lbs": 10, "build": "Long"},
-        "mutant_changes_text": "Fox baseline (red/gray/arctic similar). Build spelled 'Lone' in source.",
-        "attribute_bonuses": {"IQ": 2, "ME": 4, "PB": 2, "Spd": 6},
-        "natural_weapons": [
-            {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
-            {"name": "Teeth (1D10)", "cost": 10, "details": "Bite: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Digging", "cost": 10, "details": "Digging ability."},
-        ],
-    },
-
-    "CANINES — COYOTE": {
-        "bio_e": 55,
-        "original": {"size_level": 5, "length_in": 54, "weight_lbs": 40, "build": "Medium"},
-        "mutant_changes_text": "Coyote baseline; other features are same as wolf block per source note.",
-        "attribute_bonuses": {"IQ": 2, "ME": 2, "PP": 2, "PE": 2, "Spd": 6},
-        "natural_weapons": [
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Digging (Coyotes only)", "cost": 10, "details": "Digging ability."},
-        ],
-    },
-
-    "CANINES — WOLF": {
-        "bio_e": 45,
-        "original": {"size_level": 8, "length_in": 72, "weight_lbs": 150, "build": "Medium"},
-        "mutant_changes_text": "Wolf baseline.",
-        "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 4, "PP": 2, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Vision (Wolves only)", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "CATTLE — COW": {
-        "bio_e": 10,
-        "original": {"size_level": 16, "length_in": 96, "weight_lbs": 2000, "build": "Short"},
-        "mutant_changes_text": "Domesticated meat/milk cattle; many breeds.",
-        "attribute_bonuses": {"PS": 2, "PE": 4, "Spd": 2},
-        "natural_weapons": [{"name": "Horns (1D6)", "cost": 5, "details": "Horns: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "CATTLE — BULL": {
-        "bio_e": 10,
-        "original": {"size_level": 16, "length_in": 96, "weight_lbs": 2000, "build": "Short"},
-        "mutant_changes_text": "Bull variant (same baseline as cow).",
-        "attribute_bonuses": {"PS": 4, "PE": 2, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Horns (1D6)", "cost": 5, "details": "Horns: 1D6"},
-            {"name": "Horns (1D12) (Bulls only)", "cost": 10, "details": "Horns: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "DEER": {
-        "bio_e": 30,
-        "original": {"size_level": 13, "length_in": 72, "weight_lbs": 400, "build": "Medium"},
-        "mutant_changes_text": "Deer baseline (hands/biped/speech/looks shared within deer/elk/moose block per source).",
-        "attribute_bonuses": {"PP": 2, "PE": 2, "Spd": 6},
-        "natural_weapons": [
-            {"name": "Antlers (Small damage) (bucks only)", "cost": 5, "details": "Antlers (small damage)"},
-            {"name": "Antlers (Large damage) (bucks only)", "cost": 10, "details": "Antlers (large damage)"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."},
-        ],
-    },
-
-    "ELK": {
-        "bio_e": 10,
-        "original": {"size_level": 17, "length_in": 108, "weight_lbs": 1100, "build": "Medium"},
-        "mutant_changes_text": "Elk baseline (deer family block).",
-        "attribute_bonuses": {"PS": 2, "PE": 2, "Spd": 6},
-        "natural_weapons": [
-            {"name": "Antlers (Small damage) (bulls only)", "cost": 5, "details": "Antlers (small damage)"},
-            {"name": "Antlers (Large damage) (bulls only)", "cost": 10, "details": "Antlers (large damage)"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."},
-        ],
-    },
-
-    "MOOSE": {
-        "bio_e": 0,
-        "original": {"size_level": 19, "length_in": 120, "weight_lbs": 1500, "build": "Medium"},
-        "mutant_changes_text": "Moose baseline (deer family block).",
-        "attribute_bonuses": {"PS": 4, "PE": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Antlers (Small damage) (bulls only)", "cost": 5, "details": "Antlers (small damage)"},
-            {"name": "Antlers (Large damage) (bulls only)", "cost": 10, "details": "Antlers (large damage)"},
-        ],
-        "abilities": [
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Advanced Taste", "cost": 5, "details": "Enhanced taste."},
-        ],
-    },
-
-    "ELEPHANT": {
-        "bio_e": 0,
-        "original": {"size_level": 20, "length_in": 120, "weight_lbs": 10000, "build": "Short"},
-        "mutant_changes_text": "Largest land animal; strong; trunk functions as flexible prehensile limb.",
-        "attribute_bonuses": {"IQ": 4, "MA": 2, "PS": 4},
-        "natural_weapons": [
-            {"name": "Tusks (1D8)", "cost": 5, "details": "Tusks: 1D8"},
-            {"name": "Tusks (1D12)", "cost": 10, "details": "Tusks: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Prehensile Trunk", "cost": 5, "details": "Extra limb; counts as Partial Hand; long enough to touch ground."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-        ],
-    },
-
-    "FELINES — BOBCAT": {
-        "bio_e": 70,
-        "original": {"size_level": 5, "length_in": 42, "weight_lbs": 22, "build": "Short"},
-        "mutant_changes_text": "Bobcat (feline block; other features match Lynx per note).",
-        "attribute_bonuses": {"ME": 2, "PP": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "FELINES — LYNX": {
-        "bio_e": 65,
-        "original": {"size_level": 5, "length_in": 40, "weight_lbs": 35, "build": "Short"},
-        "mutant_changes_text": "Lynx baseline.",
-        "attribute_bonuses": {"ME": 2, "PP": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "FELINES — CAT": {
-        "bio_e": 75,
-        "original": {"size_level": 3, "length_in": 24, "weight_lbs": 10, "build": "Medium"},
-        "mutant_changes_text": "Domesticated cat; markings vary.",
-        "attribute_bonuses": {"MA": 2, "PP": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "FELINES — CHEETAH": {
-        "bio_e": 45,
-        "original": {"size_level": 8, "length_in": 60, "weight_lbs": 125, "build": "Long"},
-        "mutant_changes_text": "Fastest mammals; sleek athletic build. Height listed (up to 30 inches tall).",
-        "attribute_bonuses": {"PS": 1, "PP": 4, "PE": 2, "Spd": 10},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Quick Run (1/min)", "cost": 10, "details": "Double move; +2 Initiative & Dodge for rest of round."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "FELINES — COUGAR": {
-        "bio_e": 40,
-        "original": {"size_level": 9, "length_in": 60, "weight_lbs": 175, "build": "Medium"},
-        "mutant_changes_text": "Cougar baseline (great cats block).",
-        "attribute_bonuses": {"ME": 2, "PS": 2, "PP": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "FELINES — JAGUAR / LEOPARD": {
-        "bio_e": 23,
-        "original": {"size_level": 12, "length_in": 72, "weight_lbs": 300, "build": "Medium"},
-        "mutant_changes_text": "Jaguar/Leopard baseline (great cats block).",
-        "attribute_bonuses": {"ME": 2, "PS": 3, "PP": 3, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Great Leaping", "cost": 10, "details": "Triple Jump distance (Jaguar/Leopard only)."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "FELINES — LION": {
-        "bio_e": 15,
-        "original": {"size_level": 14, "length_in": None, "weight_lbs": None, "build": "Medium"},
-        "mutant_changes_text": "Lion baseline. Weight unclear in source line; left as None.",
-        "attribute_bonuses": {"MA": 2, "PS": 4, "PP": 2, "Spd": 3},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "FELINES — TIGER": {
-        "bio_e": 10,
-        "original": {"size_level": 15, "length_in": None, "weight_lbs": 500, "build": "Medium"},
-        "mutant_changes_text": "Tiger baseline.",
-        "attribute_bonuses": {"PS": 6, "PP": 1, "PE": 1, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Retractable Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Retractable Claws (1D10) (climbing)", "cost": 10, "details": "Claws: 1D10; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-            {"name": "Teeth (1D12)", "cost": 10, "details": "Bite: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Natural Swimmer", "cost": 10, "details": "Swimming skill or +20%."},
-        ],
-    },
-
-    "GOAT": {
-        "bio_e": 55,
-        "original": {"size_level": 6, "length_in": 10, "weight_lbs": 75, "build": "Medium"},
-        "mutant_changes_text": "Domesticated milk/meat animal; hardy. Length line appears inconsistent (kept as written: 'up to 10 inches long').",
-        "attribute_bonuses": {"IQ": 1, "ME": 1, "PE": 4, "Spd": 2},
-        "natural_weapons": [{"name": "Horns (1D8)", "cost": 5, "details": "Horns: 1D8"}],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Natural Climber", "cost": 5, "details": "Climbing skill or +20%."},
-            {"name": "Toxin Resistance", "cost": 10, "details": "+5 save vs toxins/poisons/drugs."},
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "HIPPOPOTAMUS": {
-        "bio_e": 0,
-        "original": {"size_level": 20, "length_in": 168, "weight_lbs": 4000, "build": "Short"},
-        "mutant_changes_text": "Giant aggressive grazers; spend most of life in water.",
-        "attribute_bonuses": {"ME": 2, "PS": 6, "PE": 2},
-        "natural_weapons": [{"name": "Teeth (1D12)", "cost": 5, "details": "Bite: 1D12"}],
-        "abilities": [
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-            {"name": "Light Natural Armor (AR 8, +40 SDC)", "cost": 10, "details": "AR 8; +40 SDC."},
-            {"name": "Natural Swimmer", "cost": 5, "details": "Swimming skill or +20%."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
-        ],
-    },
-
-    "HORSE (RIDING HORSE)": {
-        "bio_e": 10,
-        "original": {"size_level": 18, "length_in": 60, "weight_lbs": 1400, "build": "Medium"},
-        "mutant_changes_text": "Domesticated grazing animal; typical riding horse. Height listed as up to 60 inches at shoulder.",
-        "attribute_bonuses": {"PS": 2, "PE": 2, "Spd": 8},
-        "natural_weapons": [],
-        "abilities": [
-            {"name": "Leaping", "cost": 10, "details": "Double Jump distance."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "LEMUR": {
-        "bio_e": 60,
-        "original": {"size_level": 3, "length_in": 42, "weight_lbs": 6, "build": "Long"},
-        "mutant_changes_text": "Long-snouted primate from Madagascar (ring-tailed lemur baseline).",
-        "attribute_bonuses": {"IQ": 1, "MA": 3, "PP": 2},
-        "natural_weapons": [{"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "LIZARDS (GROUP ENTRY)": {
-        "bio_e": 0,
-        "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Long"},
-        "mutant_changes_text": (
-            "Group entry: Gecko/Skink (SL1), Chameleon/Horned Lizard (SL2), Gila Monster/Iguana (SL3), Komodo Dragon (SL13). "
-            "Bio-E: 85/80/75/25 respectively; attribute bonuses vary by variant. This entry is kept as a group placeholder."
-        ),
-        "attribute_bonuses": {},
-        "natural_weapons": [],
-        "abilities": [],
-    },
-
-    "MARTEN & MINK": {
-        "bio_e": 80,
-        "original": {"size_level": 2, "length_in": 20, "weight_lbs": 3, "build": "Long"},
-        "mutant_changes_text": "Larger cousins to weasels; long bodies; valuable fur. Martens are fox-faced climbers; minks live near water.",
-        "attribute_bonuses": {"IQ": 2, "ME": 1, "PP": 2, "Spd": 5},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Fit through openings a quarter their Size Level."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "MOLE": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 6, "weight_lbs": 1, "build": "Short"},
-        "mutant_changes_text": "Small furry burrowers adapted to underground life. Looks partial/full lines cut off in source.",
-        "attribute_bonuses": {"IQ": 1, "PE": 2},
-        "natural_weapons": [{"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"}],
-        "abilities": [
-            {"name": "Hold Breath (automatic)", "cost": 0, "details": "Hold breath is automatic."},
-            {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
-            {"name": "Tunneling", "cost": 5, "details": "Tunneling ability."},
-            {"name": "Advanced Excavating", "cost": 10, "details": "Instinctive permanent structures; double time."},
-            {"name": "Nightvision", "cost": 5, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "MONKEY (ARBOREAL)": {
-        "bio_e": 45,
-        "original": {"size_level": 4, "length_in": 24, "weight_lbs": 20, "build": "Long"},
-        "mutant_changes_text": "Arboreal monkeys (prehensile tails) kept as pets/research animals; markings vary.",
-        "attribute_bonuses": {"IQ": 2, "ME": 2, "PP": 2, "PE": 2},
-        "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
-            {"name": "Prehensile Tail", "cost": 15, "details": "Extra limb; Partial Hand."},
-            {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "BABOON": {
-        "bio_e": 35,
-        "original": {"size_level": 6, "length_in": 36, "weight_lbs": 65, "build": "Medium"},
-        "mutant_changes_text": "Ground-dwelling tribal monkeys; mandrills/geladas similar. Uses same ability package as Monkey (Arboreal) per source.",
-        "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 4},
-        "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Advanced Vision", "cost": 5, "details": "Enhanced eyesight."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Touch", "cost": 5, "details": "Enhanced tactile sense."},
-            {"name": "Prehensile Tail", "cost": 15, "details": "Extra limb; Partial Hand."},
-            {"name": "Prehensile Feet (Partial Hands)", "cost": 5, "details": "Feet function as partial hands."},
-        ],
-    },
-
-    "MUSKRAT": {
-        "bio_e": 75,
-        "original": {"size_level": 2, "length_in": 25, "weight_lbs": 14, "build": "Short"},
-        "mutant_changes_text": "River-dwelling vegetarians/scavengers; build dens with underwater entrances. Abilities not listed in source beyond gnawing note.",
-        "attribute_bonuses": {"IQ": 3, "ME": 1, "MA": 1},
-        "natural_weapons": [
-            {"name": "Claws (1D6)", "cost": 5, "details": "Claws: 1D6"},
-            {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage unclear in source line."},
-            {"name": "Teeth (1D10) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D10; gnawing per beaver-style chew rules."},
-        ],
-        "abilities": [],
-    },
-
-    "RABBIT": {
-        "bio_e": 70,
-        "original": {"size_level": 3, "length_in": 18, "weight_lbs": 8, "build": "Medium"},
-        "mutant_changes_text": "Rabbits/hares worldwide; small vegetarians that depend on speed and agility.",
-        "attribute_bonuses": {"PP": 2, "Spd": 8},
-        "natural_weapons": [{"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Digging", "cost": 5, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
-            {"name": "Excavating", "cost": 15, "details": "Excavating ability."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "RACCOON": {
-        "bio_e": 65,
-        "original": {"size_level": 4, "length_in": 38, "weight_lbs": 18, "build": "Short"},
-        "mutant_changes_text": "Adaptable nocturnal scavengers. Looks text partially truncated in source.",
-        "attribute_bonuses": {"IQ": 2, "MA": 2, "PP": 2, "PE": 2},
-        "natural_weapons": [{"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."}],
-        "abilities": [
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "RHINOCEROS": {
-        "bio_e": 0,
-        "original": {"size_level": 20, "length_in": 78, "weight_lbs": 8000, "build": "Long"},
-        "mutant_changes_text": "Aggressive grazing animals; good runners; very strong. African rhinos have two horns; Great Indian rhino has one.",
-        "attribute_bonuses": {"PS": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Horn (1D8)", "cost": 5, "details": "Horn: 1D8"},
-            {"name": "Horn (1D12)", "cost": 10, "details": "Horn: 1D12"},
-        ],
-        "abilities": [
-            {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 10, "details": "AR 8; +20 SDC."},
-            {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 20, "details": "AR 10; +40 SDC."},
-            {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 30, "details": "AR 12; +60 SDC."},
-            {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 40, "details": "AR 14; +80 SDC."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-        ],
-    },
-
-    "PIG": {
-        "bio_e": 25,
-        "original": {"size_level": 12, "length_in": 72, "weight_lbs": 800, "build": "Short"},
-        "mutant_changes_text": "Domesticated pigs bred for meat production; can be very large.",
-        "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 2, "PE": 2, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Tusks (small, 1D6)", "cost": 5, "details": "Tusks: 1D6"},
-            {"name": "Tusks (large, 1D10)", "cost": 10, "details": "Tusks: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-        ],
-    },
-
-    "BOAR": {
-        "bio_e": 25,
-        "original": {"size_level": 12, "length_in": 72, "weight_lbs": 800, "build": "Short"},
-        "mutant_changes_text": "Aggressive wild pigs; invasive; dangerous with tusks.",
-        "attribute_bonuses": {"PS": 4, "PE": 4, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Tusks (small, 1D6)", "cost": 5, "details": "Tusks: 1D6"},
-            {"name": "Tusks (large, 1D10)", "cost": 10, "details": "Tusks: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Thick Skin (+20 SDC)", "cost": 5, "details": "+20 SDC."},
-        ],
-    },
-
-    "PORCUPINE": {
-        "bio_e": 65,
-        "original": {"size_level": 5, "length_in": 42, "weight_lbs": 40, "build": "Medium"},
-        "mutant_changes_text": "Defensive quills; dangerous to predators.",
-        "attribute_bonuses": {"ME": 2, "PE": 2},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (1D8)", "cost": 5, "details": "Bite: 1D8"},
-        ],
-        "abilities": [
-            {"name": "Quill Defense", "cost": 15, "details": "Natural Armor AR 12, +20 SDC; attackers rolling <12 take 1D12; mutant gets +1D12 on unarmed melee."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "RODENTS (GROUP ENTRY)": {
-        "bio_e": 0,
-        "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Medium"},
-        "mutant_changes_text": (
-            "Group entry: SL1 (Mice/Gerbils/Hamsters) Bio-E 85; SL2 (Rats/Guinea Pigs/Pikas) Bio-E 80. "
-            "Attribute bonuses vary by subgroup. This entry is kept as a group placeholder."
-        ),
-        "attribute_bonuses": {},
-        "natural_weapons": [],
-        "abilities": [],
-    },
-
-    "SHARK (Tiger Shark baseline)": {
-        "bio_e": 0,
-        "original": {"size_level": 19, "length_in": 168, "weight_lbs": 1400, "build": "Long"},
-        "mutant_changes_text": "Ancient aquatic apex predators; entry lists tiger shark baseline.",
-        "attribute_bonuses": {"PS": 4, "PP": 2, "Spd": 2},
-        "natural_weapons": [
-            {"name": "Teeth (1D10)", "cost": 5, "details": "Bite: 1D10"},
-            {"name": "Teeth (1D12+2)", "cost": 10, "details": "Bite: 1D12+2"},
-        ],
-        "abilities": [
-            {"name": "Electrosense", "cost": 5, "details": "Detect electrical fields in water."},
-            {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."},
-            {"name": "Gills", "cost": 5, "details": "Breathes underwater."},
-            {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; depth line cut off in source."},
-        ],
-    },
-
-    "SKUNK (Striped)": {
-        "bio_e": 70,
-        "original": {"size_level": 3, "length_in": 32, "weight_lbs": 8, "build": "Short"},
-        "mutant_changes_text": "Striped skunk; uses stink glands as defense. Looks text mixed/truncated in source.",
-        "attribute_bonuses": {"ME": 2, "PE": 2},
-        "natural_weapons": [],
-        "abilities": [
-            {"name": "Stink Spray", "cost": 15, "details": "Butyl mercaptan musk w/ sulfuric acid; 8/day; 10 ft; failed Save vs Toxin = nausea/incapacitated 2D6 minutes; stench lasts 2D12 days; Advanced Smell = -4 to save."},
-        ],
-    },
-
-    "SKUNK (Spotted)": {
-        "bio_e": 75,
-        "original": {"size_level": 2, "length_in": 20, "weight_lbs": 23, "build": "Short"},
-        "mutant_changes_text": "Spotted skunk variant (same stink spray). Weight listed as 23 lbs in source (unusual; kept).",
-        "attribute_bonuses": {"ME": 2, "PE": 2},
-        "natural_weapons": [],
-        "abilities": [
-            {"name": "Stink Spray", "cost": 15, "details": "Butyl mercaptan musk w/ sulfuric acid; 8/day; 10 ft; failed Save vs Toxin = nausea/incapacitated 2D6 minutes; stench lasts 2D12 days; Advanced Smell = -4 to save."},
-        ],
-    },
-
-    "SQUIRREL": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 20, "weight_lbs": 1, "build": "Long"},
-        "mutant_changes_text": "Common urban wild mammal; great climbers. Flying squirrels can glide.",
-        "attribute_bonuses": {"PP": 2, "Spd": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (1D6)", "cost": 5, "details": "Bite: 1D6"},
-            {"name": "Teeth (1D10) + Gnawing Teeth", "cost": 10, "details": "Bite: 1D10; gnawing teeth."},
-        ],
-        "abilities": [
-            {"name": "Digging (automatic)", "cost": 0, "details": "Digging is automatic."},
-            {"name": "Tunneling", "cost": 10, "details": "Tunneling ability."},
-            {"name": "Excavating", "cost": 20, "details": "Excavating ability."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Glide", "cost": 10, "details": "Gliding flight."},
-            {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
-        ],
-    },
-
-    "TURTLES — POND TURTLE": {
-        "bio_e": 90,
-        "original": {"size_level": 1, "length_in": 5, "weight_lbs": 1, "build": "Medium"},
-        "mutant_changes_text": "Many environments; TMNT mutated from small pond turtles.",
-        "attribute_bonuses": {"PE": 2},
-        "natural_weapons": [{"name": "Bite (1D6)", "cost": 5, "details": "Bite: 1D6"}],
-        "abilities": [
-            {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 5, "details": "AR 8; +20 SDC."},
-            {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 15, "details": "AR 10; +40 SDC."},
-            {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 25, "details": "AR 12; +60 SDC."},
-            {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 35, "details": "AR 14; +80 SDC."},
-            {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
-            {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives to 500 ft."},
-        ],
-    },
-
-    "TURTLES — SNAPPING TURTLE": {
-        "bio_e": 50,
-        "original": {"size_level": 8, "length_in": 40, "weight_lbs": 200, "build": "Medium"},
-        "mutant_changes_text": "Snapping turtle; uses same turtle armor block as pond turtle.",
-        "attribute_bonuses": {"PS": 2},
-        "natural_weapons": [
-            {"name": "Claws (1D8)", "cost": 5, "details": "Claws: 1D8"},
-            {"name": "Bite (1D6)", "cost": 5, "details": "Bite: 1D6"},
-            {"name": "Bite (1D10)", "cost": 10, "details": "Bite: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Natural Armor: Light (AR 8, +20 SDC)", "cost": 5, "details": "AR 8; +20 SDC."},
-            {"name": "Natural Armor: Medium (AR 10, +40 SDC)", "cost": 15, "details": "AR 10; +40 SDC."},
-            {"name": "Natural Armor: Heavy (AR 12, +60 SDC)", "cost": 25, "details": "AR 12; +60 SDC."},
-            {"name": "Natural Armor: Tough (AR 14, +80 SDC)", "cost": 35, "details": "AR 14; +80 SDC."},
-            {"name": "Digging", "cost": 5, "details": "Digging ability."},
-            {"name": "Hold Breath", "cost": 5, "details": "Hold breath for extended periods."},
-            {"name": "Master Swimmer", "cost": 5, "details": "Swimming skill or +20%; survives to 500 ft."},
-        ],
-    },
-
-    "WEASEL": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 18, "weight_lbs": 1, "build": "Long"},
-        "mutant_changes_text": "Fearless carnivore; narrow body fits small holes.",
-        "attribute_bonuses": {"ME": 2, "PS": 2, "PP": 3, "Spd": 5},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage not clearly stated in source line."},
-        ],
-        "abilities": [
-            {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Can fit through very small openings."},
-            {"name": "Hyper Metabolism", "cost": 20, "details": "+2 Initiative, +2 Dodge, +1 action/round, +10% Escape Artist; requires frequent naps/constant eating; must eat own weight daily; half meat."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Digging", "cost": 10, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 20, "details": "Tunneling ability."},
-            {"name": "Excavating", "cost": 30, "details": "Excavating ability."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "FERRET": {
-        "bio_e": 80,
-        "original": {"size_level": 1, "length_in": 18, "weight_lbs": 1, "build": "Long"},
-        "mutant_changes_text": "Similar to weasels but friendlier; popular pets. Uses same ability package as Weasel per source note.",
-        "attribute_bonuses": {"MA": 2, "PS": 2, "PP": 3, "Spd": 5},
-        "natural_weapons": [
-            {"name": "Claws (1D6) (climbing)", "cost": 5, "details": "Claws: 1D6; climbing."},
-            {"name": "Teeth (damage unclear)", "cost": 5, "details": "Bite damage unclear in source line."},
-        ],
-        "abilities": [
-            {"name": "Tight Squeeze (automatic)", "cost": 0, "details": "Can fit through very small openings."},
-            {"name": "Hyper Metabolism", "cost": 20, "details": "+2 Initiative, +2 Dodge, +1 action/round, +10% Escape Artist; requires frequent naps/constant eating; must eat own weight daily; half meat."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Digging", "cost": 10, "details": "Digging ability."},
-            {"name": "Tunneling", "cost": 20, "details": "Tunneling ability."},
-            {"name": "Excavating", "cost": 30, "details": "Excavating ability."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-
-    "WOLVERINE": {
-        "bio_e": 60,
-        "original": {"size_level": 5, "length_in": 40, "weight_lbs": 30, "build": "Short"},
-        "mutant_changes_text": "Northern carnivore with extreme endurance; can drive off bears; adaptable predator. Human-feature cost lines garbled in source.",
-        "attribute_bonuses": {"IQ": 2, "ME": 2, "PS": 2, "PE": 4},
-        "natural_weapons": [
-            {"name": "Claws (1D8) (climbing)", "cost": 5, "details": "Claws: 1D8; climbing."},
-            {"name": "Claws (1D12) (climbing)", "cost": 10, "details": "Claws: 1D12; climbing."},
-            {"name": "Teeth (1D10)", "cost": 5, "details": "Bite: 1D10"},
-        ],
-        "abilities": [
-            {"name": "Tough Hide (automatic)", "cost": 0, "details": "+20 SDC; +4 save vs cold; cold does half damage."},
-            {"name": "Leaping", "cost": 5, "details": "Double Jump distance."},
-            {"name": "Nightvision", "cost": 10, "details": "See in darkness/low light."},
-            {"name": "Digging", "cost": 10, "details": "Digging ability."},
-            {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."},
-        ],
-    },
-}
-
-# ---------------- Bio-E helpers / defaults ----------------
-
-def _bioe_norm(s: str) -> str:
-    """Normalize an animal name for alias matching."""
-    s = (s or "").strip().upper()
-    s = s.replace("&", "AND")
-    s = re.sub(r"[—–-]", " ", s)          # dashes to spaces
-    s = re.sub(r"[^A-Z0-9 ]+", "", s)     # drop punctuation
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
-
-
-# Default "empty" animal rule used when we can't resolve a selection.
-BIOE_DEFAULT_ANIMAL: dict[str, Any] = {
-    "bio_e": 0,
-    "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Medium"},
-    "mutant_changes_text": "",
-    "attribute_bonuses": {},
-    "natural_weapons": [],
-    "abilities": [],
-}
-
-
-def _build_bioe_aliases(data: dict[str, dict[str, Any]]) -> dict[str, str]:
-    """
-    Builds a best-effort alias table so UI selections like "Dog", "Alligator",
-    "Wild Turkey", etc. can map into BIOE_ANIMAL_DATA keys.
-    """
-    aliases: dict[str, str] = {}
-
-    # 1) exact normalized keys for every BIOE_ANIMAL_DATA key
-    for k in data.keys():
-        aliases[_bioe_norm(k)] = k
-
-    # 2) common UI-friendly names -> your data keys (add more anytime)
-    manual = {
-        # common TMNT tables / UI names
-        "DOG": "CANINES — DOGS",
-        "DOGS": "CANINES — DOGS",
-        "CAT": "FELINES — CAT",
-        "CROW": "BIRDS — CROW / RAVEN",
-        "RAVEN": "BIRDS — CROW / RAVEN",
-        "PIGEON": "BIRDS — PIGEON",
-        "DOVE": "BIRDS — DOVE",
-        "PARROT": "BIRDS — PARROT",
-        "SONGBIRD": "BIRDS — TEMPERATE SONGBIRDS",
-        "WILD SONGBIRD": "BIRDS — TEMPERATE SONGBIRDS",
-        "SMALL WILD BIRD": "BIRDS — SMALL WILD BIRDS",
-        "WILD GAME BIRD": "BIRDS — WILD GAME BIRDS (GROUSE / PARTRIDGE / PHEASANT / QUAIL)",
-        "TURKEY": "BIRDS — TURKEY",
-        "WILD TURKEY": "BIRDS — TURKEY",
-
-        "FROG": "AMPHIBIANS — FROG & TOAD",
-        "TOAD": "AMPHIBIANS — FROG & TOAD",
-        "SALAMANDER": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-        "NEWT": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-        "AXOLOTL": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-
-        "TURTLE": "TURTLES — POND TURTLE",
-        "SNAPPING TURTLE": "TURTLES — SNAPPING TURTLE",
-
-        "ALLIGATOR": "ALLIGATOR & CROCODILE",
-        "CROCODILE": "ALLIGATOR & CROCODILE",
-
-        "BLACK BEAR": "BEAR — BLACK BEAR",
-        "GRIZZLY BEAR": "BEAR — GRIZZLY",
-        "KODIAK": "BEAR — BROWN (KODIAK)",
-        "BROWN BEAR": "BEAR — BROWN (KODIAK)",
-        "POLAR BEAR": "BEAR — POLAR",
-
-        "BOBCAT": "FELINES — BOBCAT",
-        "LYNX": "FELINES — LYNX",
-        "COUGAR": "FELINES — COUGAR",
-        "CHEETAH": "FELINES — CHEETAH",
-        "LION": "FELINES — LION",
-        "TIGER": "FELINES — TIGER",
-        "LEOPARD": "FELINES — JAGUAR / LEOPARD",
-        "JAGUAR": "FELINES — JAGUAR / LEOPARD",
-
-        "FOX": "CANINES — FOX",
-        "COYOTE": "CANINES — COYOTE",
-        "WOLF": "CANINES — WOLF",
-
-        "PIG": "PIG",
-        "BOAR": "BOAR",
-        "RACCOON": "RACCOON",
-        "SKUNK": "SKUNK (Striped)",
-        "PORCUPINE": "PORCUPINE",
-        "SQUIRREL": "SQUIRREL",
-        "BEAVER": "BEAVER",
-        "MUSKRAT": "MUSKRAT",
-        "MOLE": "MOLE",
-        "WEASEL": "WEASEL",
-        "FERRET": "FERRET",
-        "WOLVERINE": "WOLVERINE",
-        "BADGER": "BADGER",
-        "ARMADILLO": "ARMADILLO",
-        "AARDVARK": "AARDVARK",
-        "ELEPHANT": "ELEPHANT",
-        "RHINOCEROS": "RHINOCEROS",
-        "HIPPOPOTAMUS": "HIPPOPOTAMUS",
-        "CAMEL": "CAMEL",
-        "BISON": "BUFFALO & BISON",
-        "BUFFALO": "BUFFALO & BISON",
-        "CHIMPANZEE": "APES — CHIMPANZEE",
-        "GORILLA": "APES — GORILLA",
-        "ORANGUTAN": "APES — ORANGUTAN",
-        "MONKEY": "MONKEY (ARBOREAL)",
-        "BABOON": "BABOON",
-
-        # group-ish
-        "LIZARD": "LIZARDS (GROUP ENTRY)",
-        "LIZARDS": "LIZARDS (GROUP ENTRY)",
-        "RODENT": "RODENTS (GROUP ENTRY)",
-        "RODENTS": "RODENTS (GROUP ENTRY)",
-        "SHARK": "SHARK (Tiger Shark baseline)",
-        "BAT": "BAT",
-    }
-
-    for k, v in manual.items():
-        if v in data:
-            aliases[_bioe_norm(k)] = v
-
-    return aliases
-
-
-BIOE_ANIMAL_ALIASES: dict[str, str] = _build_bioe_aliases(BIOE_ANIMAL_DATA)
-
-
-
-
-
-GEAR_BY_NAME = {g["name"]: g for g in GEAR_CATALOG}
-
-# ---------------- TMNT & Other Strangeness: Determine the Animal tables ----------------
-TMNTOS_ANIMAL_TYPE_RANGES: list[tuple[range, str]] = [
-    (range(1, 26), "Urban Animals"),
-    (range(26, 41), "Rural Animals"),
-    (range(41, 66), "Wild Animals"),
-    (range(66, 76), "Wild Birds"),
-    (range(76, 91), "Zoo Animals"),
-    (range(91, 101), "Lab Animals"),
-]
-
-TMNTOS_ANIMALS_BY_TYPE: dict[str, list[tuple[range, str]]] = {
-    "Urban Animals": [
-        (range(1, 26), "Dog"),
-        (range(26, 46), "Cat"),
-        (range(46, 51), "Newt"),
-        (range(51, 56), "Crow"),
-        (range(56, 61), "Pet Rodent (Gerbil, Hamster, etc.)"),
-        (range(61, 66), "Squirrel"),
-        (range(66, 76), "Pet Ferret"),
-        (range(76, 84), "Pigeon"),
-        (range(84, 89), "Bird (Songbird or Parrot)"),
-        (range(89, 93), "Bat"),
-        (range(93, 95), "Turtle"),
-        (range(95, 97), "Frog"),
-        (range(97, 101), "Lizard"),
-    ],
-    "Rural Animals": [
-        (range(1, 6), "Dog"),
-        (range(6, 11), "Cat"),
-        (range(11, 16), "Cow or Bull"),
-        (range(16, 21), "Pig"),
-        (range(21, 31), "Chicken"),
-        (range(31, 36), "Duck"),
-        (range(36, 51), "Horse"),
-        (range(51, 61), "Rabbit"),
-        (range(61, 66), "Rat"),
-        (range(66, 71), "Sheep"),
-        (range(71, 81), "Goat"),
-        (range(81, 86), "Turkey"),
-        (range(86, 89), "Bat"),
-        (range(89, 95), "Raccoon"),
-        (range(95, 99), "Frog"),
-        (range(99, 101), "Salamander"),
-    ],
-    "Wild Animals": [
-        (range(1, 6), "Wolf"),
-        (range(6, 11), "Coyote"),
-        (range(11, 16), "Fox"),
-        (range(16, 21), "Badger"),
-        (range(21, 26), "Black Bear"),
-        (range(26, 28), "Grizzly Bear"),
-        (range(28, 31), "Cougar"),
-        (range(31, 34), "Bobcat"),
-        (range(34, 36), "Lynx"),
-        (range(36, 38), "Wolverine"),
-        (range(38, 46), "Weasel"),
-        (range(46, 50), "Alligator"),
-        (range(50, 53), "Otter"),
-        (range(53, 56), "Beaver"),
-        (range(56, 61), "Muskrat"),
-        (range(61, 66), "Raccoon"),
-        (range(66, 71), "Boar"),
-        (range(71, 76), "Skunk"),
-        (range(76, 81), "Porcupine"),
-        (range(81, 84), "Opossum"),
-        (range(84, 86), "Marten"),
-        (range(86, 89), "Armadillo"),
-        (range(89, 96), "Deer"),
-        (range(96, 98), "Elk"),
-        (range(98, 100), "Moose"),
-        (range(100, 101), "Mole"),
-    ],
-    "Wild Birds": [
-        (range(1, 6), "Duck"),
-        (range(6, 11), "Goose"),
-        (range(11, 16), "Swan"),
-        (range(16, 21), "Cardinal"),
-        (range(21, 31), "Wild Turkey"),
-        (range(31, 36), "Small Wild Bird"),
-        (range(36, 51), "Wild Game Bird"),
-        (range(51, 61), "Raven"),
-        (range(61, 66), "Pigeon"),
-        (range(66, 71), "Wild Songbird"),
-        (range(71, 81), "Hawk"),
-        (range(81, 86), "Falcon"),
-        (range(86, 91), "Eagle"),
-        (range(91, 96), "Owl"),
-        (range(96, 99), "Escaped Pet Songbird"),
-        (range(99, 101), "Escaped Pet Parrot"),
-    ],
-    "Zoo Animals": [
-        (range(1, 5), "Lion"),
-        (range(5, 9), "Tiger"),
-        (range(9, 13), "Leopard"),
-        (range(13, 17), "Cheetah"),
-        (range(17, 21), "Polar Bear"),
-        (range(21, 25), "Crocodile (or Alligator)"),
-        (range(25, 29), "Aardvark"),
-        (range(29, 33), "Rhinoceros"),
-        (range(33, 37), "Hippopotamus"),
-        (range(37, 41), "Elephant"),
-        (range(41, 45), "Chimpanzee"),
-        (range(45, 49), "Orangutan"),
-        (range(49, 53), "Gorilla"),
-        (range(53, 57), "Monkey"),
-        (range(57, 61), "Baboon"),
-        (range(61, 65), "Camel"),
-        (range(65, 69), "Bison (or Buffalo)"),
-        (range(69, 73), "Lemur"),
-        (range(73, 77), "Shark"),
-        (range(77, 81), "Octopus"),
-        (range(81, 85), "Squid"),
-        (range(85, 89), "Penguin"),
-        (range(89, 93), "Kodiak (Brown Bear)"),
-        (range(93, 97), "Lizard"),
-        (range(97, 101), "Komodo Dragon"),
-    ],
-    "Lab Animals": [
-        (range(1, 26), "Mouse"),
-        (range(26, 46), "Rat"),
-        (range(46, 51), "Songbird"),
-        (range(51, 56), "Dog"),
-        (range(56, 61), "Cat"),
-        (range(61, 66), "Rabbit"),
-        (range(66, 76), "Guinea Pig"),
-        (range(76, 81), "Hamster"),
-        (range(81, 86), "Chimpanzee"),
-        (range(86, 90), "Monkey"),
-        (range(90, 94), "Pig"),
-        (range(94, 98), "Sheep"),
-        (range(98, 101), "Salamander"),
-    ],
-}
-
-
 def _unique_items(items: list[str]) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
@@ -2282,172 +336,6 @@ def _unique_items(items: list[str]) -> list[str]:
     return out
 
 
-# ---- Size tables ----
-SIZE_LEVEL_EFFECTS: dict[int, dict[str, int]] = {
-    1: {"bio_e": 0, "IQ": -8, "PS": -12, "PE": -4, "Speed": +7, "SDC": 5},
-    2: {"bio_e": 5, "IQ": -6, "PS": -6, "PE": -2, "Speed": +5, "SDC": 10},
-    3: {"bio_e": 10, "IQ": -4, "PS": -3, "PE": -1, "Speed": +3, "SDC": 15},
-    4: {"bio_e": 15, "IQ": -2, "PS": -2, "PE": 0, "Speed": 0, "SDC": 20},
-    5: {"bio_e": 20, "IQ": 0, "PS": -1, "PE": 0, "Speed": 0, "SDC": 25},
-    6: {"bio_e": 25, "IQ": 0, "PS": 0, "PE": 0, "Speed": 0, "SDC": 30},
-    7: {"bio_e": 30, "IQ": 0, "PS": +1, "PE": 0, "Speed": 0, "SDC": 30},
-    8: {"bio_e": 35, "IQ": 0, "PS": +2, "PE": 0, "Speed": 0, "SDC": 35},
-    9: {"bio_e": 40, "IQ": 0, "PS": +3, "PE": +1, "Speed": 0, "SDC": 35},
-    10: {"bio_e": 45, "IQ": 0, "PS": +4, "PE": +2, "Speed": 0, "SDC": 35},
-    11: {"bio_e": 50, "IQ": 0, "PS": +5, "PE": +3, "Speed": -1, "SDC": 40},
-    12: {"bio_e": 55, "IQ": 0, "PS": +6, "PE": +4, "Speed": -2, "SDC": 40},
-    13: {"bio_e": 60, "IQ": 0, "PS": +7, "PE": +5, "Speed": -3, "SDC": 45},
-    14: {"bio_e": 65, "IQ": 0, "PS": +8, "PE": +6, "Speed": -4, "SDC": 50},
-    15: {"bio_e": 70, "IQ": 0, "PS": +9, "PE": +7, "Speed": -5, "SDC": 55},
-    16: {"bio_e": 75, "IQ": 0, "PS": +10, "PE": +8, "Speed": -6, "SDC": 60},
-    17: {"bio_e": 80, "IQ": 0, "PS": +11, "PE": +9, "Speed": -7, "SDC": 65},
-    18: {"bio_e": 85, "IQ": 0, "PS": +12, "PE": +10, "Speed": -8, "SDC": 70},
-    19: {"bio_e": 90, "IQ": 0, "PS": +13, "PE": +11, "Speed": -9, "SDC": 75},
-    20: {"bio_e": 95, "IQ": 0, "PS": +14, "PE": +12, "Speed": -10, "SDC": 80},
-}
-
-SIZE_LEVEL_FORMULAS: dict[int, dict[str, str]] = {
-    1: {"weight": "3D6 ounces", "short": "1D6 inches", "medium": "2D6 inches", "long": "3D6 inches"},
-    2: {"weight": "1D6 lbs", "short": "3D6 inches", "medium": "12+2D6 inches", "long": "12+2D6 inches"},
-    3: {"weight": "4+1D6 lbs", "short": "12+1D6 inches", "medium": "12+3D6 inches", "long": "12+3D6 inches"},
-    4: {"weight": "10+2D6 lbs", "short": "12+3D6 inches", "medium": "24+2D6 inches", "long": "24+3D6 inches"},
-    5: {"weight": "20+4D6 lbs", "short": "24+1D6 inches", "medium": "36+1D6 inches", "long": "36+3D6 inches"},
-    6: {"weight": "40+6D6 lbs", "short": "24+2D6 inches", "medium": "36+2D6 inches", "long": "48+3D6 inches"},
-    7: {"weight": "75+3D10 lbs", "short": "24+3D6 inches", "medium": "48+1D6 inches", "long": "60+2D6 inches"},
-    8: {"weight": "100+6D10 lbs", "short": "36+1D6 inches", "medium": "48+2D6 inches", "long": "60+3D6 inches"},
-    9: {"weight": "150+3D10 lbs", "short": "36+2D6 inches", "medium": "60+1D6 inches", "long": "72+2D6 inches"},
-    10: {"weight": "175+3D10 lbs", "short": "36+3D6 inches", "medium": "60+3D6 inches", "long": "72+2D6 inches"},
-    11: {"weight": "200+6D10 lbs", "short": "48+1D6 inches", "medium": "72+1D6 inches", "long": "84+3D6 inches"},
-    12: {"weight": "250+6D10 lbs", "short": "48+2D6 inches", "medium": "72+2D6 inches", "long": "84+3D6 inches"},
-    13: {"weight": "300+6D10 lbs", "short": "48+3D6 inches", "medium": "72+2D6 inches", "long": "96+3D6 inches"},
-    14: {"weight": "350+6D10 lbs", "short": "60+1D6 inches", "medium": "84+1D6 inches", "long": "96+3D6 inches"},
-    15: {"weight": "400+1D% lbs", "short": "60+2D6 inches", "medium": "84+2D6 inches", "long": "108+3D6 inches"},
-    16: {"weight": "500+1D% lbs", "short": "60+3D6 inches", "medium": "84+3D6 inches", "long": "108+3D6 inches"},
-    17: {"weight": "600+2D% lbs", "short": "72+1D6 inches", "medium": "96+1D6 inches", "long": "120+2D6 inches"},
-    18: {"weight": "800+2D% lbs", "short": "72+2D6 inches", "medium": "96+2D6 inches", "long": "120+3D6 inches"},
-    19: {"weight": "1,000+5D% lbs", "short": "72+3D6 inches", "medium": "96+2D6 inches", "long": "132+2D6 inches"},
-    20: {"weight": "1,500 + (1D% x 100) lbs", "short": "72+4D6 inches", "medium": "108+1D6 inches", "long": "132+3D6 inches"},
-}
-
-# ---------------- Combat Training Rules ----------------
-BASELINE_COMBAT: dict[str, Any] = {
-    "actions_per_round": 2,
-    "unarmed_damage": "1D4",
-    "known_actions": ["Attack", "Disarm", "Tackle"],
-    "known_reactions": ["Parry", "Dodge", "Roll with Impact"],
-    "critical_range": (20, 20),
-    "notes": [
-        "Combat Training bonuses are cumulative (they stack as you level).",
-        "Critical Strike on a natural 20 doubles damage (baseline).",
-    ],
-}
-
-COMBAT_TRAINING_RULES: dict[str, dict[int, dict[str, Any]]] = {
-    "Basic Combat Training": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 1},
-        2: {"parry": 1, "dodge": 1},
-        3: {"strike": 1},
-        4: {"actions_per_round": 1},
-        5: {"unlock_reactions": ["Entangle"]},
-        6: {"melee_damage": "+1", "initiative": 1},
-        7: {"critical_range": (19, 20)},
-        8: {"unlock_actions": ["Throw"]},
-        9: {"actions_per_round": 1},
-        10: {"roll_with_impact": 1},
-        11: {"parry": 1, "dodge": 1, "strike": 1},
-        12: {"unlock_actions": ["Hold"]},
-        13: {"melee_damage": "+1", "initiative": 1},
-        14: {"actions_per_round": 1},
-        15: {"specials": ["Critical Strike or Stun with a melee Sneak Attack"]},
-    },
-    "Expert Combat Training": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 2},
-        2: {"parry": 2, "dodge": 2, "strike": 2},
-        3: {"unlock_reactions": ["Entangle"]},
-        4: {"actions_per_round": 1},
-        5: {"unlock_actions": ["Throw"]},
-        6: {"melee_damage": "+2", "initiative": 2},
-        7: {"critical_range": (18, 20)},
-        8: {"unlock_actions": ["Hold"]},
-        9: {"actions_per_round": 1},
-        10: {"roll_with_impact": 2},
-        11: {"parry": 2, "dodge": 2, "strike": 2},
-        12: {"unlock_reactions": ["Disarm (reaction)"]},
-        13: {"roll_with_impact": 2},
-        14: {"actions_per_round": 1},
-        15: {"specials": ["Death Blow with melee attacks on a natural 20"]},
-    },
-    "Martial Arts Combat Training": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 3},
-        2: {"parry": 3, "dodge": 3, "strike": 3},
-        3: {"unlock_reactions": ["Entangle"], "unlock_actions": ["Throw"]},
-        4: {"actions_per_round": 1},
-        5: {"melee_damage": "+3", "initiative": 3},
-        6: {"unlock_actions": ["Hold"], "unlock_reactions": ["Disarm (reaction)"]},
-        7: {"critical_range": (18, 20)},
-        8: {"specials": ["Critical Strike or Stun with a melee Sneak Attack"]},
-        9: {"actions_per_round": 1},
-        10: {"unlock_actions": ["Leap Attack"], "unlock_reactions": ["Throw (reaction)"]},
-        11: {"parry": 2, "dodge": 2, "strike": 2},
-        12: {"roll_with_impact": 2},
-        13: {"specials": ["Critical Strike or Stun with melee on a natural 18–20"]},
-        14: {"actions_per_round": 1},
-        15: {"specials": ["Death Blow with melee attacks on a natural 20"]},
-    },
-    "Ninjutsu Combat Training (Special)": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 4},
-        2: {"parry": 3, "dodge": 3, "strike": 3},
-        3: {"unlock_reactions": ["Entangle"], "unlock_actions": ["Throw"]},
-        4: {"actions_per_round": 1, "unlock_actions": ["Leap Attack"]},
-        5: {"specials": ["Critical Strike or Stun with a melee Sneak Attack"]},
-        6: {"melee_damage": "+2", "initiative": 2},
-        7: {"critical_range": (18, 20)},
-        8: {"unlock_actions": ["Hold"], "unlock_reactions": ["Disarm (reaction)"]},
-        9: {"actions_per_round": 1},
-        10: {"unlock_reactions": ["Throw (reaction)"], "roll_with_impact": 2},
-        11: {"parry": 2, "dodge": 2, "strike": 2},
-        12: {"specials": ["Death Blow with melee attacks on a natural 20"]},
-        13: {"melee_damage": "+3", "initiative": 3},
-        14: {"actions_per_round": 1},
-        15: {"specials": ["Critical Strike or Stun with melee on a natural 17–20"]},
-    },
-    "Assassin Combat Training (Special)": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 3},
-        2: {"parry": 2, "dodge": 2, "strike": 2},
-        3: {"specials": ["Critical Strike or Stun with a melee Sneak Attack"]},
-        4: {"actions_per_round": 1},
-        5: {"melee_damage": "+3", "initiative": 3},
-        6: {"unlock_reactions": ["Entangle"], "unlock_actions": ["Throw"]},
-        7: {"critical_range": (19, 20)},
-        8: {"specials": ["Critical Strike or Stun with melee on a natural 17–20"]},
-        9: {"actions_per_round": 1},
-        10: {"specials": ["Death Blow with melee attacks on a natural 20"]},
-        11: {"parry": 2, "dodge": 2, "strike": 2},
-        12: {"roll_with_impact": 2},
-        13: {"melee_damage": "+2", "initiative": 2},
-        14: {"actions_per_round": 1},
-        15: {"critical_range": (17, 20)},
-    },
-    "Feral Combat Training (Special)": {
-        1: {"unlock_reactions": ["Automatic Parry"], "roll_with_impact": 2},
-        2: {"strike": 3, "parry": 2, "dodge": 2},
-        3: {"melee_damage": "+3", "initiative": 1},
-        4: {"actions_per_round": 1},
-        5: {"unlock_reactions": ["Entangle"], "unlock_actions": ["Throw"]},
-        6: {"melee_damage": "+3", "initiative": 1},
-        7: {"specials": ["Critical Strike or Stun with melee on a natural 17–20"]},
-        8: {"strike": 3},
-        9: {"actions_per_round": 1},
-        10: {"unlock_actions": ["Leap Attack"]},
-        11: {"parry": 2, "dodge": 2, "roll_with_impact": 1},
-        12: {"specials": ["Critical Strike or Stun with a melee Sneak Attack"]},
-        13: {"melee_damage": "+4", "initiative": 2},
-        14: {"actions_per_round": 1},
-        15: {"specials": ["Death Blow with melee attacks on a natural 20"]},
-    },
-}
-
-
 def _training_names() -> list[str]:
     return ["None"] + sorted(COMBAT_TRAINING_RULES.keys())
 
@@ -2456,6 +344,8 @@ def _combine_melee_damage(dmg_list: list[str]) -> str:
     if not dmg_list:
         return "—"
     return ", ".join(dmg_list)
+
+
 
 
 class AboutDialog(QDialog):
@@ -2494,265 +384,6 @@ class AboutDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Ok)
         buttons.accepted.connect(self.accept)
         layout.addWidget(buttons)
-
-    # ---------------- Bio-E lookup helpers ----------------
-
-    BIOE_DEFAULT_ANIMAL: dict[str, Any] = {
-        "bio_e": 0,
-        "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Medium"},
-        "mutant_changes_text": "",
-        "attribute_bonuses": {},
-        "natural_weapons": [],
-        "abilities": [],
-    }
-
-    def _norm_animal_label(s: str) -> str:
-        """Normalize UI labels like 'Black Bear' -> 'BLACK BEAR' for alias matching."""
-        if not s:
-            return ""
-        s = s.strip().upper()
-
-        # normalize punctuation / separators
-        s = s.replace("—", "-").replace("–", "-")
-        s = s.replace("&", " AND ")
-        s = s.replace("/", " ")
-        s = s.replace("(", " ").replace(")", " ")
-        s = s.replace(",", " ")
-        s = re.sub(r"\s+", " ", s).strip()
-        return s
-
-    # Map the UI animal names (TMNT tables / your combo labels) to BIOE_ANIMAL_DATA keys.
-    # Add to this as you discover more label variants in your tables.
-    BIOE_ANIMAL_ALIASES: dict[str, str] = {
-        # --- Canines ---
-        "DOG": "CANINES — DOGS",
-        "DOGS": "CANINES — DOGS",
-        "FOX": "CANINES — FOX",
-        "COYOTE": "CANINES — COYOTE",
-        "WOLF": "CANINES — WOLF",
-
-        # --- Felines ---
-        "CAT": "FELINES — CAT",
-        "BOBCAT": "FELINES — BOBCAT",
-        "LYNX": "FELINES — LYNX",
-        "COUGAR": "FELINES — COUGAR",
-        "CHEETAH": "FELINES — CHEETAH",
-        "LION": "FELINES — LION",
-        "TIGER": "FELINES — TIGER",
-        "LEOPARD": "FELINES — JAGUAR / LEOPARD",
-        "JAGUAR": "FELINES — JAGUAR / LEOPARD",
-
-        # --- Bears ---
-        "BLACK BEAR": "BEAR — BLACK BEAR",
-        "GRIZZLY BEAR": "BEAR — GRIZZLY",
-        "GRIZZLY": "BEAR — GRIZZLY",
-        "BROWN BEAR": "BEAR — BROWN (KODIAK)",
-        "KODIAK": "BEAR — BROWN (KODIAK)",
-        "KODIAK BEAR": "BEAR — BROWN (KODIAK)",
-        "POLAR BEAR": "BEAR — POLAR",
-
-        # --- Reptiles / Amphibians ---
-        "ALLIGATOR": "ALLIGATOR & CROCODILE",
-        "CROCODILE": "ALLIGATOR & CROCODILE",
-        "FROG": "AMPHIBIANS — FROG & TOAD",
-        "TOAD": "AMPHIBIANS — FROG & TOAD",
-        "SALAMANDER": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-        "NEWT": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-        "AXOLOTL": "AMPHIBIANS — SALAMANDER, NEWT, & AXOLOTL",
-        "TURTLE": "TURTLES — POND TURTLE",
-        "POND TURTLE": "TURTLES — POND TURTLE",
-        "SNAPPING TURTLE": "TURTLES — SNAPPING TURTLE",
-
-        # --- Farm / common ---
-        "COW": "CATTLE — COW",
-        "BULL": "CATTLE — BULL",
-        "PIG": "PIG",
-        "BOAR": "BOAR",
-        "GOAT": "GOAT",
-        "HORSE": "HORSE (RIDING HORSE)",
-        "RIDING HORSE": "HORSE (RIDING HORSE)",
-        "RABBIT": "RABBIT",
-
-        # --- Birds (TMNT tables often use generic names) ---
-        "CHICKEN": "BIRDS — CHICKEN",
-        "DUCK": "BIRDS — DUCK",
-        "GOOSE": "BIRDS — GOOSE",
-        "SWAN": "BIRDS — SWAN",
-        "PIGEON": "BIRDS — PIGEON",
-        "DOVE": "BIRDS — DOVE",
-        "PARROT": "BIRDS — PARROT",
-        "CROW": "BIRDS — CROW / RAVEN",
-        "RAVEN": "BIRDS — CROW / RAVEN",
-        "HAWK": "BIRDS — HAWK / FALCON",
-        "FALCON": "BIRDS — HAWK / FALCON",
-        "EAGLE": "BIRDS — EAGLE",
-        "PENGUIN": "BIRDS — PENGUIN",
-        "TURKEY": "BIRDS — TURKEY",
-        "WILD TURKEY": "BIRDS — TURKEY",
-        "SMALL WILD BIRD": "BIRDS — SMALL WILD BIRDS",
-        "WILD SONGBIRD": "BIRDS — TEMPERATE SONGBIRDS",
-        "SONGBIRD": "BIRDS — TEMPERATE SONGBIRDS",
-
-        # --- Other common TMNT table animals ---
-        "RACCOON": "RACCOON",
-        "SKUNK": "SKUNK (Striped)",
-        "PORCUPINE": "PORCUPINE",
-        "ARMADILLO": "ARMADILLO",
-        "BADGER": "BADGER",
-        "BEAVER": "BEAVER",
-        "MUSKRAT": "MUSKRAT",
-        "MARTEN": "MARTEN & MINK",
-        "MINK": "MARTEN & MINK",
-        "WEASEL": "WEASEL",
-        "FERRET": "FERRET",
-        "WOLVERINE": "WOLVERINE",
-        "DEER": "DEER",
-        "ELK": "ELK",
-        "MOOSE": "MOOSE",
-        "ELEPHANT": "ELEPHANT",
-        "RHINOCEROS": "RHINOCEROS",
-        "HIPPOPOTAMUS": "HIPPOPOTAMUS",
-        "CAMEL": "CAMEL",
-        "BISON": "BUFFALO & BISON",
-        "BUFFALO": "BUFFALO & BISON",
-        "LEMUR": "LEMUR",
-        "BAT": "BAT",
-
-        # --- Groups / placeholders (if your tables roll these generically) ---
-        "LIZARD": "LIZARDS (GROUP ENTRY)",
-        "LIZARDS": "LIZARDS (GROUP ENTRY)",
-        "RODENT": "RODENTS (GROUP ENTRY)",
-        "RAT": "RODENTS (GROUP ENTRY)",
-        "MOUSE": "RODENTS (GROUP ENTRY)",
-        "GUINEA PIG": "RODENTS (GROUP ENTRY)",
-        "HAMSTER": "RODENTS (GROUP ENTRY)",
-        "GERBIL": "RODENTS (GROUP ENTRY)",
-    }
-
-
-    # ---------------- Bio-E lookup helpers (MODULE LEVEL) ----------------
-
-    BIOE_DEFAULT_ANIMAL: dict[str, Any] = {
-        "bio_e": 0,
-        "original": {"size_level": None, "length_in": None, "weight_lbs": None, "build": "Medium"},
-        "mutant_changes_text": "",
-        "attribute_bonuses": {},
-        "natural_weapons": [],
-        "abilities": [],
-    }
-
-    PHYSICAL_SKILL_EFFECTS: dict[str, dict[str, Any]] = {
-        "Acrobatics": {
-            "attribute_bonus": {"PP": 1, "PE": 1},
-            "combat_bonus": {"roll_with_impact": 2},
-            "sdc_roll": "1d6",
-            "skill_bonus_pct": {"Prowl": 5, "Climbing": 5},
-            "extra_attacks": [],
-            "notes": [
-                "Balancing / Walk Tightrope / Highwire 50% +5% per level",
-                "Jumping / Flip / Tumble 50% +5% per level",
-                "Can jump further than normal",
-            ],
-        },
-        "General Athletics": {
-            "attribute_bonus": {"PS": 1, "PE": 1},
-            "combat_bonus": {"parry": 1, "dodge": 1, "roll_with_impact": 1},
-            "speed_roll": "1d6",
-            "sdc_roll": "1d10",
-            "extra_attacks": [],
-            "notes": [],
-        },
-        "Body Building": {
-            "attribute_rolls": {"PS": "1d4+1"},
-            "combat_bonus": {},
-            "sdc_flat": 10,
-            "extra_attacks": [],
-            "notes": [],
-        },
-        "Boxing": {
-            "attribute_bonus": {"PS": 1, "PE": 1},
-            "combat_bonus": {"parry": 1, "dodge": 1, "actions_per_round": 1, "pull_punch": 1},
-            "sdc_roll": "1d12",
-            "extra_attacks": [],
-            "notes": [
-                "Critical Strike with unarmed melee automatically stuns opponent for 1d4 rounds.",
-            ],
-        },
-        "Climbing": {
-            "attribute_bonus": {"PS": 1, "PE": 1},
-            "combat_bonus": {},
-            "sdc_roll": "1d6",
-            "skill_bonus_pct": {},
-            "extra_attacks": [],
-            "notes": [
-                "Second roll to recover hold after failed climb.",
-                "Rappelling included for game purposes.",
-            ],
-        },
-        "Fencing": {
-            "attribute_bonus": {},
-            "combat_bonus": {"strike_swords": 1, "parry_swords": 1, "damage_swords": 2},
-            "extra_attacks": [],
-            "notes": [
-                "Bonuses stack with WP Sword and Combat Training.",
-            ],
-        },
-        "Gymnastics": {
-            "attribute_bonus": {"PS": 1, "PP": 1},
-            "combat_bonus": {"roll_with_impact": 2},
-            "sdc_roll": "1d8",
-            "skill_bonus_pct": {"Prowl": 5, "Climbing": 5},
-            "extra_attacks": [],
-            "notes": [
-                "Balancing / Jumping 40% +5% per level",
-                "Flip / Tumble 60% +5% per level",
-                "Can jump further than normal",
-            ],
-        },
-        "Prowl": {
-            "attribute_bonus": {},
-            "combat_bonus": {},
-            "extra_attacks": ["Sneak Attack"],
-            "notes": [
-                "Successful prowl may enable Sneak Attack.",
-            ],
-        },
-        "Running": {
-            "attribute_bonus": {"PE": 2},
-            "combat_bonus": {},
-            "speed_roll": "4d4",
-            "sdc_roll": "1d6",
-            "extra_attacks": [],
-            "notes": [],
-        },
-        "Swimming": {
-            "attribute_bonus": {},
-            "combat_bonus": {},
-            "extra_attacks": [],
-            "notes": [],
-        },
-        "Advanced Swimming": {
-            "attribute_bonus": {"PS": 1, "PE": 1},
-            "combat_bonus": {},
-            "sdc_roll": "1d6",
-            "swim_speed_roll": "3d4",
-            "extra_attacks": [],
-            "notes": [],
-        },
-        "Wrestling": {
-            "attribute_bonus": {"PS": 1, "PE": 1},
-            "combat_bonus": {"roll_with_impact": 1, "pull_punch": 1},
-            "sdc_roll": "1d12",
-            "extra_attacks": ["Throw Attack", "Crush Attack", "Hold on Critical"],
-            "notes": [
-                "Throw Attack deals +2 damage.",
-                "Crush Attack deals +4 unarmed damage to held target; target cannot Parry or Dodge.",
-                "Critical Strike with unarmed melee automatically gets a Hold.",
-            ],
-        },
-    }
-
-
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -2795,6 +426,92 @@ class MainWindow(QMainWindow):
         self.on_toggle_dark_mode(True)
 
         self.stack.setCurrentWidget(self.welcome_page)
+
+
+    def on_mutant_origin_changed(self) -> None:
+        selected = str(self.cb_mutant_origin.currentData() or "")
+        details = ""
+
+        for _, payload in TMNTOS_MUTANT_ANIMAL_ORIGINS:
+            if payload["name"] == selected:
+                details = payload.get("details", "")
+                break
+
+        self.ed_mutant_origin_details.setPlainText(details)
+        self.update_creator_organization_enabled()
+
+        if selected != "Deliberate Experimentation":
+            self.cb_creator_organization.setCurrentIndex(0)
+            self.ed_creator_organization_details.clear()
+
+
+    def on_background_education_changed(self) -> None:
+        selected = str(self.cb_background_education.currentData() or "")
+        details = ""
+
+        for _, payload in TMNTOS_WILD_ANIMAL_EDUCATION:
+            if payload["name"] == selected:
+                details = payload.get("details", "")
+                break
+
+        self.ed_background_education_details.setPlainText(details)
+
+
+    def on_creator_organization_changed(self) -> None:
+        selected = str(self.cb_creator_organization.currentData() or "")
+        details = ""
+
+        for _, payload in TMNTOS_CREATOR_ORGANIZATIONS:
+            if payload["name"] == selected:
+                details = payload.get("details", "")
+                break
+
+        self.ed_creator_organization_details.setPlainText(details)
+
+
+    def on_roll_mutant_origin(self) -> None:
+        roll = roll_d100()
+        payload = _pick_payload_from_ranges(TMNTOS_MUTANT_ANIMAL_ORIGINS, roll)
+        name = payload.get("name", "")
+
+        idx = self.cb_mutant_origin.findData(name)
+        self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_mutant_origin_details.setPlainText(payload.get("details", ""))
+        self.update_creator_organization_enabled()
+
+        if name == "Deliberate Experimentation":
+            self.on_roll_creator_organization()
+
+        self.statusBar().showMessage(f"Mutant Origin roll: {roll} -> {name}", 3000)
+
+
+    def on_roll_background_education(self) -> None:
+        roll = roll_d100()
+        payload = _pick_payload_from_ranges(TMNTOS_WILD_ANIMAL_EDUCATION, roll)
+        name = payload.get("name", "")
+
+        idx = self.cb_background_education.findData(name)
+        self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_background_education_details.setPlainText(payload.get("details", ""))
+
+        self.statusBar().showMessage(f"Education roll: {roll} -> {name}", 3000)
+
+
+    def on_roll_creator_organization(self) -> None:
+        if str(self.cb_mutant_origin.currentData() or "") != "Deliberate Experimentation":
+            self.cb_creator_organization.setCurrentIndex(0)
+            self.ed_creator_organization_details.clear()
+            return
+
+        roll = roll_d100()
+        payload = _pick_payload_from_ranges(TMNTOS_CREATOR_ORGANIZATIONS, roll)
+        name = payload.get("name", "")
+
+        idx = self.cb_creator_organization.findData(name)
+        self.cb_creator_organization.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_creator_organization_details.setPlainText(payload.get("details", ""))
+
+        self.statusBar().showMessage(f"Creator Organization roll: {roll} -> {name}", 3000)
 
 
     # ----------- Scroll Bars --------
@@ -2941,12 +658,16 @@ class MainWindow(QMainWindow):
         saved_layout.addLayout(load_row)
         layout.addWidget(saved_box)
 
+
+
+
+
     # ---------------- Random Level 1 (implemented) ----------------
     def on_welcome_random_level1(self) -> None:
         self._enter_editor()
         self.load_into_editor(Character(), None)
         self.generate_random_level1_character()
-    
+
     def generate_random_level1_character(self) -> None:
         # Level 1
         self.sp_level.setValue(1)
@@ -2959,6 +680,18 @@ class MainWindow(QMainWindow):
         self.on_roll_animal_type()
         self.on_roll_animal()
         self.on_roll_name_clicked()
+
+        # Origin / Background / Creator Organization
+        self.on_roll_mutant_origin()
+        self.on_roll_background_education()
+
+        if str(self.cb_mutant_origin.currentData() or "") == "Deliberate Experimentation":
+            self.on_roll_creator_organization()
+        else:
+            if hasattr(self, "cb_creator_organization"):
+                self.cb_creator_organization.setCurrentIndex(0)
+            if hasattr(self, "ed_creator_organization_details"):
+                self.ed_creator_organization_details.clear()
 
         # Alignment
         align_values = [
@@ -2974,7 +707,7 @@ class MainWindow(QMainWindow):
         idx = self.cb_alignment.findData(chosen_align)
         self.cb_alignment.setCurrentIndex(idx if idx != -1 else 0)
 
-        # Age/Gender (simple)
+        # Age/Gender
         self.ed_age.setText(str(random.randint(13, 60)))
         self.ed_gender.setText(random.choice(["Male", "Female", "Unknown"]))
 
@@ -2986,38 +719,59 @@ class MainWindow(QMainWindow):
 
         # Combat Training
         trainings = _training_names()[1:]  # exclude None
-        t = random.choice(trainings) if trainings else "None"
-        idx = self.cb_combat_training.findData(t)
+        training_name = random.choice(trainings) if trainings else "None"
+        idx = self.cb_combat_training.findData(training_name)
         self.cb_combat_training.setCurrentIndex(idx if idx != -1 else 0)
         self.chk_combat_override.setChecked(False)
         self.recalc_combat_from_training()
 
+        # Random Skills: 5 professional, 5 amateur
+        pro_names = sorted([name for name in self.pro_skill_lookup.keys() if name])
+        ama_names = sorted([name for name in self.amateur_skill_lookup.keys() if name])
+
+        chosen_pro = random.sample(pro_names, k=min(5, len(pro_names))) if pro_names else []
+        chosen_ama = random.sample(ama_names, k=min(5, len(ama_names))) if ama_names else []
+
+        for i, cb in enumerate(self.pro_skill_boxes):
+            desired = chosen_pro[i] if i < len(chosen_pro) else ""
+            idx = cb.findData(desired, role=Qt.UserRole)
+            cb.setCurrentIndex(idx if idx != -1 else 0)
+
+        for i, cb in enumerate(self.amateur_skill_boxes):
+            desired = chosen_ama[i] if i < len(chosen_ama) else ""
+            idx = cb.findData(desired, role=Qt.UserRole)
+            cb.setCurrentIndex(idx if idx != -1 else 0)
+
+        self.on_skills_changed()
+
         # 1 weapon
         if self.weapon_combos:
             weapon_names = [w["name"] for w in WEAPONS_CATALOG]
-            wname = random.choice(weapon_names) if weapon_names else ""
-            idx = self.weapon_combos[0].findData(wname)
+            weapon_name = random.choice(weapon_names) if weapon_names else ""
+            idx = self.weapon_combos[0].findData(weapon_name)
             self.weapon_combos[0].setCurrentIndex(idx if idx != -1 else 0)
             for i in range(1, len(self.weapon_combos)):
                 self.weapon_combos[i].setCurrentIndex(0)
 
-        # 1 vehicle (random section)
+        # 1 vehicle
         sections = ["landcraft", "watercraft", "aircraft"]
         chosen_section = random.choice(sections)
+
         if chosen_section == "landcraft":
             pool = [v["name"] for v in VEHICLES_LANDCRAFT]
         elif chosen_section == "watercraft":
             pool = [v["name"] for v in VEHICLES_WATERCRAFT]
         else:
             pool = [v["name"] for v in VEHICLES_AIRCRAFT]
-        vname = random.choice(pool) if pool else ""
+
+        vehicle_name = random.choice(pool) if pool else ""
 
         for key in ("landcraft", "watercraft", "aircraft"):
             section = self.vehicle_sections.get(key, {})
             combos: list[QComboBox] = section.get("combos", [])
             for i, cb in enumerate(combos):
-                if key == chosen_section and i == 0 and vname:
-                    idx = cb.findData(vname)
+                if key == chosen_section and i == 0 and vehicle_name:
+                    idx = cb.findData(vehicle_name)
                     cb.setCurrentIndex(idx if idx != -1 else 0)
                 else:
                     cb.setCurrentIndex(0)
@@ -3025,6 +779,17 @@ class MainWindow(QMainWindow):
         self.recalc_total_wealth()
         self.recalc_weight_breakdown()
         self.statusBar().showMessage("Generated random level 1 character")
+
+    def update_creator_organization_enabled(self) -> None:
+        is_deliberate = str(self.cb_mutant_origin.currentData() or "") == "Deliberate Experimentation"
+        self.cb_creator_organization.setEnabled(is_deliberate)
+        self.ed_creator_organization_details.setEnabled(is_deliberate)
+        self.btn_roll_creator_organization.setEnabled(is_deliberate)
+
+        if not is_deliberate:
+            self.cb_creator_organization.setCurrentIndex(0)
+            self.ed_creator_organization_details.clear()
+
 
     def refresh_welcome_list(self) -> None:
         if not hasattr(self, "welcome_list"):
@@ -3422,109 +1187,19 @@ class MainWindow(QMainWindow):
         return base + bonus
     
     def _normalize_animal_for_names(self, animal_label: str) -> str:
-        s = (animal_label or "").strip().upper()
-
-        direct = {
-            "POND TURTLE": "POND TURTLE",
-            "TURTLE": "POND TURTLE",
-            "SNAPPING TURTLE": "SNAPPING TURTLE",
-            "RAT": "RAT",
-            "RABBIT": "RABBIT",
-            "RACCOON": "RACCOON",
-            "FOX": "FOX",
-            "WOLF": "WOLF",
-            "DOG": "DOG",
-            "CAT": "CAT",
-            "ALLIGATOR": "ALLIGATOR",
-            "CROCODILE": "CROCODILE",
-            "BAT": "BAT",
-            "BLACK BEAR": "BEAR",
-            "GRIZZLY BEAR": "BEAR",
-            "BROWN BEAR": "BEAR",
-            "POLAR BEAR": "BEAR",
-            "BEAR": "BEAR",
-            "SKUNK": "SKUNK",
-            "OTTER": "OTTER",
-            "AARDVARK": "AARDVARK",
-            "FROG": "FROG",
-            "TOAD": "TOAD",
-            "SALAMANDER": "SALAMANDER",
-            "NEWT": "NEWT",
-            "AXOLOTL": "AXOLOTL",
-            "CHIMPANZEE": "CHIMPANZEE",
-            "GORILLA": "GORILLA",
-            "ORANGUTAN": "ORANGUTAN",
-            "ARMADILLO": "ARMADILLO",
-            "BADGER": "BADGER",
-            "BEAVER": "BEAVER",
-            "BUFFALO": "BUFFALO",
-            "BISON": "BISON",
-            "CAMEL": "CAMEL",
-            "ELEPHANT": "ELEPHANT",
-            "BOBCAT": "BOBCAT",
-            "LYNX": "LYNX",
-            "CHEETAH": "CHEETAH",
-            "COUGAR": "COUGAR",
-            "JAGUAR": "JAGUAR",
-            "LEOPARD": "LEOPARD",
-            "LION": "LION",
-            "TIGER": "TIGER",
-            "GOAT": "GOAT",
-            "HIPPOPOTAMUS": "HIPPOPOTAMUS",
-            "HORSE": "HORSE",
-            "LEMUR": "LEMUR",
-            "GECKO": "GECKO",
-            "SKINK": "SKINK",
-            "CHAMELEON": "CHAMELEON",
-            "GILA MONSTER": "GILA MONSTER",
-            "IGUANA": "IGUANA",
-            "KOMODO DRAGON": "KOMODO DRAGON",
-            "MARTEN": "MARTEN",
-            "MINK": "MINK",
-            "MOLE": "MOLE",
-            "MONKEY": "MONKEY",
-            "BABOON": "BABOON",
-            "MUSKRAT": "MUSKRAT",
-            "PIG": "PIG",
-            "BOAR": "BOAR",
-            "PORCUPINE": "PORCUPINE",
-            "OPOSSUM": "OPOSSUM",
-            "SHARK": "SHARK",
-            "SHEEP": "SHEEP",
-            "SQUIRREL": "SQUIRREL",
-            "WEASEL": "WEASEL",
-            "FERRET": "FERRET",
-            "WOLVERINE": "WOLVERINE",
-            "MOUSE": "MOUSE",
-            "GERBIL": "GERBIL",
-            "HAMSTER": "HAMSTER",
-            "GUINEA PIG": "GUINEA PIG",
-            "PIKA": "PIKA",
-        }
-
-        if s in direct:
-            return direct[s]
-
-        for k in direct:
-            if k in s:
-                return direct[k]
-
-        return ""
+        from app.generators.random_character import normalize_animal_for_names
+        return normalize_animal_for_names(animal_label)
 
     def on_roll_name_clicked(self) -> None:
-        animal_label = ""
-        if hasattr(self, "cb_animal") and self.cb_animal is not None:
-            animal_label = self.cb_animal.currentText()
+        animal_label = self.cb_animal.currentText() if hasattr(self, "cb_animal") and self.cb_animal is not None else ""
+        name = random_name_for_animal(animal_label)
 
-        key = self._normalize_animal_for_names(animal_label)
-        pool = ANIMAL_NAME_POOLS.get(key, [])
-
-        if not pool:
+        if not name:
             if not self.ed_name.text().strip():
                 self.ed_name.setText("—")
             return
 
-        self.ed_name.setText(random.choice(pool))   
+        self.ed_name.setText(name)  
 
     def on_bioe_animal_selected(self) -> None:
         """
@@ -3546,12 +1221,7 @@ class MainWindow(QMainWindow):
 
 
     def on_roll_size_clicked(self) -> None:
-        """
-        Roll a random size level/build for manual use from the Basics tab.
-        This does not affect Bio-E random generation unless the user clicks it.
-        """
-        size_level = random.randint(1, 20)
-        size_build = random.choice(["short", "medium", "long"])
+        size_level, size_build = roll_size_choice()
 
         idx = self.cb_size_level.findData(size_level)
         if idx != -1:
@@ -3755,6 +1425,96 @@ class MainWindow(QMainWindow):
 
         self.ed_gender = QLineEdit()
         basics_form.addRow("Gender", self.ed_gender)
+
+        origin_row = QWidget()
+        origin_top_l = QHBoxLayout()
+        origin_top_l.setContentsMargins(0, 0, 0, 0)
+        origin_row.setLayout(origin_top_l)
+
+        self.cb_mutant_origin = QComboBox()
+        self.cb_mutant_origin.addItem("Select or roll origin", "")
+        for _, payload in TMNTOS_MUTANT_ANIMAL_ORIGINS:
+            self.cb_mutant_origin.addItem(payload["name"], payload["name"])
+        self.cb_mutant_origin.currentIndexChanged.connect(self.on_mutant_origin_changed)
+
+        self.btn_roll_mutant_origin = QPushButton("Roll")
+        self.btn_roll_mutant_origin.clicked.connect(self.on_roll_mutant_origin)
+
+        origin_top_l.addWidget(self.cb_mutant_origin, 1)
+        origin_top_l.addWidget(self.btn_roll_mutant_origin, 0)
+
+        self.ed_mutant_origin_details = QTextEdit()
+        self.ed_mutant_origin_details.setReadOnly(True)
+        self.ed_mutant_origin_details.setMinimumHeight(90)
+
+        origin_container = QWidget()
+        origin_container_l = QVBoxLayout()
+        origin_container_l.setContentsMargins(0, 0, 0, 0)
+        origin_container.setLayout(origin_container_l)
+        origin_container_l.addWidget(origin_row)
+        origin_container_l.addWidget(self.ed_mutant_origin_details)
+
+        basics_form.addRow("Mutant Animal Origin", origin_container)
+
+        education_row = QWidget()
+        education_top_l = QHBoxLayout()
+        education_top_l.setContentsMargins(0, 0, 0, 0)
+        education_row.setLayout(education_top_l)
+
+        self.cb_background_education = QComboBox()
+        self.cb_background_education.addItem("Select or roll education", "")
+        for _, payload in TMNTOS_WILD_ANIMAL_EDUCATION:
+            self.cb_background_education.addItem(payload["name"], payload["name"])
+        self.cb_background_education.currentIndexChanged.connect(self.on_background_education_changed)
+
+        self.btn_roll_background_education = QPushButton("Roll")
+        self.btn_roll_background_education.clicked.connect(self.on_roll_background_education)
+
+        education_top_l.addWidget(self.cb_background_education, 1)
+        education_top_l.addWidget(self.btn_roll_background_education, 0)
+
+        self.ed_background_education_details = QTextEdit()
+        self.ed_background_education_details.setReadOnly(True)
+        self.ed_background_education_details.setMinimumHeight(110)
+
+        education_container = QWidget()
+        education_container_l = QVBoxLayout()
+        education_container_l.setContentsMargins(0, 0, 0, 0)
+        education_container.setLayout(education_container_l)
+        education_container_l.addWidget(education_row)
+        education_container_l.addWidget(self.ed_background_education_details)
+
+        basics_form.addRow("Background / Education", education_container)
+
+        creator_row = QWidget()
+        creator_top_l = QHBoxLayout()
+        creator_top_l.setContentsMargins(0, 0, 0, 0)
+        creator_row.setLayout(creator_top_l)
+
+        self.cb_creator_organization = QComboBox()
+        self.cb_creator_organization.addItem("Select or roll creator organization", "")
+        for _, payload in TMNTOS_CREATOR_ORGANIZATIONS:
+            self.cb_creator_organization.addItem(payload["name"], payload["name"])
+        self.cb_creator_organization.currentIndexChanged.connect(self.on_creator_organization_changed)
+
+        self.btn_roll_creator_organization = QPushButton("Roll")
+        self.btn_roll_creator_organization.clicked.connect(self.on_roll_creator_organization)
+
+        creator_top_l.addWidget(self.cb_creator_organization, 1)
+        creator_top_l.addWidget(self.btn_roll_creator_organization, 0)
+
+        self.ed_creator_organization_details = QTextEdit()
+        self.ed_creator_organization_details.setReadOnly(True)
+        self.ed_creator_organization_details.setMinimumHeight(70)
+
+        creator_container = QWidget()
+        creator_container_l = QVBoxLayout()
+        creator_container_l.setContentsMargins(0, 0, 0, 0)
+        creator_container.setLayout(creator_container_l)
+        creator_container_l.addWidget(creator_row)
+        creator_container_l.addWidget(self.ed_creator_organization_details)
+
+        basics_form.addRow("Creator Organization", creator_container)
 
         size_row = QWidget()
         size_row_layout = QHBoxLayout()
@@ -4427,44 +2187,10 @@ class MainWindow(QMainWindow):
             sb.setValue(sb.maximum())
 
     def roll_dice(self, count: int, sides: int) -> Tuple[List[int], int]:
-        rolls = [random.randint(1, sides) for _ in range(count)]
-        return rolls, sum(rolls)
+        return roll_dice(count, sides)
 
     def eval_dice_expression(self, expr: str) -> Tuple[int, str]:
-        raw = expr.strip()
-        work = raw.replace(",", "")
-        work = work.replace("×", "x")
-        work = re.sub(r"\s+", " ", work).strip()
-        work_math = (
-            work.replace(" x ", " * ").replace(" X ", " * ").replace("x", "*")
-            if " x " in work or " X " in work
-            else work
-        )
-
-        roll_details: List[str] = []
-
-        def repl(m: re.Match) -> str:
-            num_str = m.group(1) or "1"
-            die_str = m.group(2)
-            n = int(num_str)
-            sides = 100 if die_str == "%" else int(die_str)
-            rolls, subtotal = self.roll_dice(n, sides)
-            roll_details.append(f"rolling {n}d{sides}... {rolls} = {subtotal}")
-            return str(subtotal)
-
-        dice_re = re.compile(r"(\d*)\s*[dD]\s*(%|\d+)")
-        replaced = dice_re.sub(repl, work_math)
-
-        math_only = re.sub(r"[A-Za-z]+", "", replaced)
-        math_only = math_only.replace('"', "").replace("’", "").replace("'", "")
-        math_only = re.sub(r"\s+", " ", math_only).strip()
-
-        if not re.fullmatch(r"[0-9+\-*/(). ]+", math_only):
-            raise ValueError(f"Unsupported expression: {raw}")
-
-        total = int(eval(math_only, {"__builtins__": {}}, {}))
-        detail = f"{raw} -> " + " | ".join(roll_details)
-        return total, detail
+        return eval_dice_expression(expr)
 
     def log_roll_expression(self, expr: str) -> int:
         total, detail = self.eval_dice_expression(expr)
@@ -4530,16 +2256,15 @@ class MainWindow(QMainWindow):
         app.setStyleSheet(base_qss + "\n" + arrow_qss)
     # ---------- Skill rules ----------
     def _load_skill_rules(self) -> None:
-        rules_path = DATA_DIR / "rules" / "skills.json"
-        if not rules_path.exists():
-            QMessageBox.warning(self, "Missing skills.json", f"Could not find:\n\n{rules_path}")
-            self.skill_rules = {"professional": {}, "amateur": {}}
-            return
         try:
-            with rules_path.open("r", encoding="utf-8") as f:
-                self.skill_rules = json.load(f)
+            self.skill_rules = load_skill_rules()
         except Exception as e:
-            QMessageBox.warning(self, "Skills Load Error", f"Could not read skills.json:\n\n{rules_path}\n\n{e}")
+            rules_path = DATA_DIR / "rules" / "skills.json"
+            QMessageBox.warning(
+                self,
+                "Skills Load Error",
+                f"Could not read skills.json:\n\n{rules_path}\n\n{e}",
+            )
             self.skill_rules = {"professional": {}, "amateur": {}}
 
     def _build_skill_models(self) -> None:
@@ -4631,13 +2356,7 @@ class MainWindow(QMainWindow):
 
     # ---------- Attributes rolling ----------
     def roll_attribute_score(self) -> tuple[int, list[int]]:
-        rolls = [random.randint(1, 6) for _ in range(3)]
-        total = sum(rolls)
-        if total in (16, 17, 18):
-            extra = random.randint(1, 6)
-            rolls.append(extra)
-            total += extra
-        return total, rolls
+        return roll_attribute_score()
 
     def on_roll_single_attribute(self, attr_name: str) -> None:
         sp = self.attribute_fields.get(attr_name)
@@ -4698,10 +2417,11 @@ class MainWindow(QMainWindow):
         if source != "tmntos":
             return
 
-        roll = _roll_d100()
-        chosen = _pick_from_ranges(TMNTOS_ANIMAL_TYPE_RANGES, roll)
+        roll = roll_d100()
+        chosen = pick_from_ranges(TMNTOS_ANIMAL_TYPE_RANGES, roll)
         if not chosen:
             return
+
         idx = self.cb_animal_type.findData(chosen)
         self.cb_animal_type.setCurrentIndex(idx if idx != -1 else 0)
         self.log_roll(f"Animal Type (TMNTOS): rolled d100={roll} => {chosen}")
@@ -4723,6 +2443,11 @@ class MainWindow(QMainWindow):
         idx = self.cb_animal.findData(chosen)
         self.cb_animal.setCurrentIndex(idx if idx != -1 else 0)
         self.log_roll(f"Animal (TMNTOS / {animal_type}): rolled d100={roll} => {chosen}")
+
+
+
+
+
 
     # ---------- Combat training ----------
     def on_toggle_combat_override(self, enabled: bool) -> None:
@@ -5008,6 +2733,7 @@ class MainWindow(QMainWindow):
         total = base_total + dmg_bonus
         self.log_roll(f"[Damage] {weapon}: {detail} Base={base_total} + MeleeBonus({dmg_bonus:+d}) => {total}")
 
+
     # ---------- Equipment handlers ----------
     def on_weapon_changed(self, idx: int) -> None:
         if idx >= len(self.weapon_combos):
@@ -5112,7 +2838,7 @@ class MainWindow(QMainWindow):
         if animal_label_or_key in BIOE_ANIMAL_DATA:
             return animal_label_or_key
 
-        norm = _norm_animal_label(animal_label_or_key)
+        norm = bioe_norm(animal_label_or_key)
         key = BIOE_ANIMAL_ALIASES.get(norm, "")
 
         # Some UI strings are descriptive like "Crocodile (or Alligator)" – try substring matching
@@ -5215,19 +2941,11 @@ class MainWindow(QMainWindow):
                 self.bio_ability_detail_boxes[i].setPlainText("")
 
     def update_psionic_availability(self) -> None:
-        me = int(self.attribute_fields.get("ME", QSpinBox()).value()) if "ME" in self.attribute_fields else 0
-        allowed = me >= 12
         for cb in getattr(self, "bio_psionic_combos", []):
-            cb.setEnabled(allowed)
-            if not allowed:
-                cb.setCurrentIndex(0)  # None
+            cb.setEnabled(True)
 
-        # If you want, show a hint in remaining label via styling
         if hasattr(self, "lbl_bio_remaining"):
-            if allowed:
-                self.lbl_bio_remaining.setToolTip("")
-            else:
-                self.lbl_bio_remaining.setToolTip("ME must be 12+ to select Psionic Powers.")
+            self.lbl_bio_remaining.setToolTip("")
 
         self.recalc_bioe_spent()
 
@@ -5237,8 +2955,7 @@ class MainWindow(QMainWindow):
         rule = self._bioe_get_animal_rule(animal)
 
         # Set total Bio-E to animal starting Bio-E (this does NOT include size effects you add elsewhere)
-        # If you want size-based Bio-E to stack, keep your size logic that modifies sp_bio_total;
-        # but that can fight with this setter. For now: overwrite with animal base, then recalc spent.
+
         self.sp_bio_total.setValue(int(rule.get("bio_e", 0) or 0))
 
         self._bioe_set_original_fields(rule.get("original", {}) if isinstance(rule.get("original"), dict) else {})
@@ -5564,6 +3281,8 @@ class MainWindow(QMainWindow):
         # armor (ignored unless you later add weight data to ARMOR_CATALOG)
         return total
 
+    def get_vehicle(name: str) -> dict[str, str]:
+        return VEHICLES_LOOKUP.get(name, {})
 
     def _get_vehicles_weight_lbs(self) -> float:
         """
@@ -5614,6 +3333,27 @@ class MainWindow(QMainWindow):
     def editor_to_character(self) -> Character:
         c = self.current_character
 
+        image_path = ""
+
+        if hasattr(self, "current_image_path") and self.current_image_path:
+            image_path = str(self.current_image_path).strip()
+        elif getattr(self.current_character, "image_path", None):
+            image_path = str(self.current_character.image_path).strip()
+
+        if image_path:
+            try:
+                c.image_path = image_path
+            except Exception:
+                pass
+            c.bio_e["image_path"] = image_path
+        else:
+            try:
+                c.image_path = ""
+            except Exception:
+                pass
+            c.bio_e["image_path"] = ""
+
+
         c.name = self.ed_name.text().strip()
 
         animal_source = str(self.cb_animal_source.currentData() or "")
@@ -5625,6 +3365,21 @@ class MainWindow(QMainWindow):
         c.bio_e["animal_source"] = animal_source
         c.bio_e["animal_type"] = animal_type
         c.bio_e["animal"] = animal
+
+        c.bio_e["mutant_origin"] = {
+            "name": str(self.cb_mutant_origin.currentData() or ""),
+            "details": self.ed_mutant_origin_details.toPlainText().strip(),
+        }
+
+        c.bio_e["background_education"] = {
+            "name": str(self.cb_background_education.currentData() or ""),
+            "details": self.ed_background_education_details.toPlainText().strip(),
+        }
+
+        c.bio_e["creator_organization"] = {
+            "name": str(self.cb_creator_organization.currentData() or ""),
+            "details": self.ed_creator_organization_details.toPlainText().strip(),
+}
 
         align = str(self.cb_alignment.currentData() or "")
         c.alignment = align
@@ -5652,7 +3407,7 @@ class MainWindow(QMainWindow):
             setattr(c, "armor_type", str(self.cb_armor.currentData() or self.cb_armor.currentText() or ""))
             setattr(c, "shield_type", str(self.cb_shield.currentData() or self.cb_shield.currentText() or ""))
             setattr(c, "shield_notes", self.ed_shield_notes.text().strip())
-            setattr(c, "gear_selected", [str(cb.currentData() or "") for cb in self.gear_combos])
+            setattr(c, "gear_selected", [str(cb.currentData() or cb.currentText() or "") for cb in self.gear_combos])
         except Exception:
             pass
 
@@ -5693,6 +3448,8 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
+        
+
         c.bio_e["total"] = int(self.sp_bio_total.value())
         c.bio_e["spent"] = int(self.sp_bio_spent.value())
 
@@ -5704,8 +3461,9 @@ class MainWindow(QMainWindow):
             "build": self.ed_bio_orig_build.text().strip(),
         }
 
-        # Mutant size selection (spend)
+        # Mutant size selection
         c.bio_e["mutant_size_level"] = int(self.cb_bio_mutant_size_level.currentData() or 0)
+        c.bio_e["mutant_size_label"] = self.cb_bio_mutant_size_level.currentText().strip()
 
         # Human features
         c.bio_e["human_features"] = {
@@ -5713,10 +3471,10 @@ class MainWindow(QMainWindow):
             "biped_cost": int(self.cb_human_biped.currentData() or 0),
             "speech_cost": int(self.cb_human_speech.currentData() or 0),
             "looks_cost": int(self.cb_human_looks.currentData() or 0),
-            "hands_label": self.cb_human_hands.currentText(),
-            "biped_label": self.cb_human_biped.currentText(),
-            "speech_label": self.cb_human_speech.currentText(),
-            "looks_label": self.cb_human_looks.currentText(),
+            "hands_label": self.cb_human_hands.currentText().strip(),
+            "biped_label": self.cb_human_biped.currentText().strip(),
+            "speech_label": self.cb_human_speech.currentText().strip(),
+            "looks_label": self.cb_human_looks.currentText().strip(),
         }
 
         # Natural weapons
@@ -5813,11 +3571,56 @@ class MainWindow(QMainWindow):
         else:
             self.cb_alignment.setCurrentIndex(0)
 
+        origin_data = getattr(c, "bio_e", {}).get("mutant_origin", {}) or {}
+        origin_name = str(origin_data.get("name", "") or "")
+        origin_details = str(origin_data.get("details", "") or "")
+
+        idx = self.cb_mutant_origin.findData(origin_name)
+        self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_mutant_origin_details.setPlainText(origin_details)
+
+        education_data = getattr(c, "bio_e", {}).get("background_education", {}) or {}
+        education_name = str(education_data.get("name", "") or "")
+        education_details = str(education_data.get("details", "") or "")
+
+        idx = self.cb_background_education.findData(education_name)
+        self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_background_education_details.setPlainText(education_details)
+
+        creator_data = getattr(c, "bio_e", {}).get("creator_organization", {}) or {}
+        creator_name = str(creator_data.get("name", "") or "")
+        creator_details = str(creator_data.get("details", "") or "")
+
+        idx = self.cb_creator_organization.findData(creator_name)
+        self.cb_creator_organization.setCurrentIndex(idx if idx != -1 else 0)
+        self.ed_creator_organization_details.setPlainText(creator_details)
+
+        self.update_creator_organization_enabled()
+
+
         self.ed_age.setText(getattr(c, "age", "") or "")
         self.ed_gender.setText(getattr(c, "gender", "") or "")
 
         self.ed_weight.setText(getattr(c, "weight", "") or "")
         self.ed_height.setText(getattr(c, "height", "") or "")
+
+        size_value = str(getattr(c, "size", "") or "").strip()
+        size_level = 1
+        size_build = "medium"
+
+        if size_value:
+            match = re.match(r"^\s*(\d+)\s*\((.*?)\)\s*$", size_value)
+            if match:
+                size_level = int(match.group(1))
+                parsed_build = match.group(2).strip().lower()
+                if parsed_build in {"short", "medium", "long"}:
+                    size_build = parsed_build
+
+        idx = self.cb_size_level.findData(size_level)
+        self.cb_size_level.setCurrentIndex(idx if idx != -1 else 0)
+
+        idx = self.cb_size_build.findData(size_build)
+        self.cb_size_build.setCurrentIndex(idx if idx != -1 else 1)                                                     
 
         self.sp_total_credits.setValue(int(getattr(c, "total_credits", 0) or 0))
         self.ed_total_wealth.setText(str(getattr(c, "total_wealth", 0) or 0))
@@ -5840,15 +3643,6 @@ class MainWindow(QMainWindow):
             idx = self.cb_armor.findText(armor_type)
         self.cb_armor.setCurrentIndex(idx if idx != -1 else 0)
 
-        self.ed_armor_name.setText(getattr(c, "armor_name", "") or "")
-
-        if idx != -1 and armor_type:
-            self.on_armor_changed()
-        else:
-            self.sp_armor_ar.setValue(int(getattr(c, "armor_ar", 0) or 0))
-            self.sp_armor_sdc.setValue(int(getattr(c, "armor_sdc", 0) or 0))
-        self.sync_defense_summary_fields()
-
 
         shield_type = str(getattr(c, "shield_type", "") or "")
         idx = self.cb_shield.findData(shield_type)
@@ -5862,6 +3656,8 @@ class MainWindow(QMainWindow):
         for i, cb in enumerate(self.gear_combos):
             desired = str(gear_selected[i]) if i < len(gear_selected) else ""
             idx = cb.findData(desired)
+            if idx == -1:
+                idx = cb.findText(desired)
             cb.setCurrentIndex(idx if idx != -1 else 0)
             self.on_gear_changed(i)
 
@@ -5936,22 +3732,7 @@ class MainWindow(QMainWindow):
             self.ed_bio_orig_weight.setText(str(original.get("weight", "") or ""))
             self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
 
-        mutant_size = int(getattr(c, "bio_e", {}).get("mutant_size_level", 0) or 0)
-        if mutant_size:
-            idx = self.cb_bio_mutant_size_level.findData(mutant_size)
-            self.cb_bio_mutant_size_level.setCurrentIndex(idx if idx != -1 else 0)
-
-        hf = getattr(c, "bio_e", {}).get("human_features", {}) or {}
-        if isinstance(hf, dict):
-            for cb, key in (
-                (self.cb_human_hands, "hands_cost"),
-                (self.cb_human_biped, "biped_cost"),
-                (self.cb_human_speech, "speech_cost"),
-                (self.cb_human_looks, "looks_cost"),
-            ):
-                cost = int(hf.get(key, 0) or 0)
-                idx = cb.findData(cost)
-                cb.setCurrentIndex(idx if idx != -1 else 0)
+        
 
         image_path = getattr(c, "image_path", None) or getattr(c, "bio_e", {}).get("image_path")
 
@@ -5969,9 +3750,33 @@ class MainWindow(QMainWindow):
             self.lbl_character_art.setText("No Image")
 
 
-        # Re-populate per-animal lists first (based on current animal)
-        # so that combos have correct options before selecting saved items.
+        # Re-populate per-animal lists first
         self.on_bioe_animal_selected()
+
+        mutant_size = int(getattr(c, "bio_e", {}).get("mutant_size_level", 0) or 0)
+        mutant_size_label = str(getattr(c, "bio_e", {}).get("mutant_size_label", "") or "")
+
+        idx = self.cb_bio_mutant_size_level.findData(mutant_size)
+        if idx == -1 and mutant_size_label:
+            idx = self.cb_bio_mutant_size_level.findText(mutant_size_label)
+        self.cb_bio_mutant_size_level.setCurrentIndex(idx if idx != -1 else 0)
+
+        hf = getattr(c, "bio_e", {}).get("human_features", {}) or {}
+        if isinstance(hf, dict):
+            for cb, cost_key, label_key in (
+                (self.cb_human_hands, "hands_cost", "hands_label"),
+                (self.cb_human_biped, "biped_cost", "biped_label"),
+                (self.cb_human_speech, "speech_cost", "speech_label"),
+                (self.cb_human_looks, "looks_cost", "looks_label"),
+            ):
+                cost = int(hf.get(cost_key, 0) or 0)
+                label = str(hf.get(label_key, "") or "")
+
+                idx = cb.findData(cost)
+                if idx == -1 and label:
+                    idx = cb.findText(label)
+
+                cb.setCurrentIndex(idx if idx != -1 else 0)
 
         saved_nw = getattr(c, "bio_e", {}).get("natural_weapons", []) or []
         if isinstance(saved_nw, list):
@@ -6010,8 +3815,6 @@ class MainWindow(QMainWindow):
                 else:
                     cb.setCurrentIndex(0)
 
-        traits = getattr(c, "bio_e", {}).get("traits", []) or []
-        self.ed_traits.setPlainText("\n".join(str(t) for t in traits))
 
         self.update_psionic_availability()
         self.recalc_bioe_spent()

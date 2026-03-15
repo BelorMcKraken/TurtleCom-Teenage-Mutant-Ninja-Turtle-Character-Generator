@@ -1,0 +1,8 @@
+[
+  { "start": 1, "end": 25, "name": "Urban Animals" },
+  { "start": 26, "end": 40, "name": "Rural Animals" },
+  { "start": 41, "end": 65, "name": "Wild Animals" },
+  { "start": 66, "end": 75, "name": "Wild Birds" },
+  { "start": 76, "end": 90, "name": "Zoo Animals" },
+  { "start": 91, "end": 100, "name": "Lab Animals" }
+]

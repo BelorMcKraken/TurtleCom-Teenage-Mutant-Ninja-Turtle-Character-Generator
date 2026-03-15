@@ -1,0 +1,11 @@
+{
+  "actions_per_round": 2,
+  "unarmed_damage": "1D4",
+  "known_actions": ["Attack", "Disarm", "Tackle"],
+  "known_reactions": ["Parry", "Dodge", "Roll with Impact"],
+  "critical_range": [20, 20],
+  "notes": [
+    "Combat Training bonuses are cumulative (they stack as you level).",
+    "Critical Strike on a natural 20 doubles damage (baseline)."
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "Acrobatics": {
+    "attribute_bonus": {"PP": 1, "PE": 1},
+    "combat_bonus": {"roll_with_impact": 2},
+    "sdc_roll": "1d6",
+    "skill_bonus_pct": {"Prowl": 5, "Climbing": 5},
+    "extra_attacks": [],
+    "notes": [
+      "Balancing / Walk Tightrope / Highwire 50% +5% per level",
+      "Jumping / Flip / Tumble 50% +5% per level",
+      "Can jump further than normal"
+    ]
+  },
+  "General Athletics": {
+    "attribute_bonus": {"PS": 1, "PE": 1},
+    "combat_bonus": {"parry": 1, "dodge": 1, "roll_with_impact": 1},
+    "speed_roll": "1d6",
+    "sdc_roll": "1d10",
+    "extra_attacks": [],
+    "notes": []
+  },
+  "Body Building ": {
+    "attribute_rolls": {"PS": "1d4+1"},
+    "combat_bonus": {},
+    "sdc_flat": 10,
+    "extra_attacks": [],
+    "notes": []
+  },
+  "Boxing": {
+    "attribute_bonus": {"PS": 1, "PE": 1},
+    "combat_bonus": {"parry": 1, "dodge": 1, "actions_per_round": 1, "pull_punch": 1},
+    "sdc_roll": "1d12",
+    "extra_attacks": [],
+    "notes": [
+      "Critical Strike with unarmed melee automatically stuns opponent for 1d4 rounds."
+    ]
+  },
+  "Climbing": {
+    "attribute_bonus": {"PS": 1, "PE": 1},
+    "combat_bonus": {},
+    "sdc_roll": "1d6",
+    "skill_bonus_pct": {},
+    "extra_attacks": [],
+    "notes": [
+      "Second roll to recover hold after failed climb.",
+      "Rappelling included for game purposes."
+    ]
+  },
+  "Fencing": {
+    "attribute_bonus": {},
+    "combat_bonus": {"strike_swords": 1, "parry_swords": 1, "damage_swords": 2},
+    "extra_attacks": [],
+    "notes": [
+      "Bonuses stack with WP Sword and Combat Training."
+    ]
+  },
+  "Gymnastics": {
+    "attribute_bonus": {"PS": 1, "PP": 1},
+    "combat_bonus": {"roll_with_impact": 2},
+    "sdc_roll": "1d8",
+    "skill_bonus_pct": {"Prowl": 5, "Climbing": 5},
+    "extra_attacks": [],
+    "notes": [
+      "Balancing / Jumping 40% +5% per level",
+      "Flip / Tumble 60% +5% per level",
+      "Can jump further than normal"
+    ]
+  },
+  "Prowl": {
+    "attribute_bonus": {},
+    "combat_bonus": {},
+    "extra_attacks": ["Sneak Attack"],
+    "notes": [
+      "Successful prowl may enable Sneak Attack."
+    ]
+  },
+  "Running": {
+    "attribute_bonus": {"PE": 2},
+    "combat_bonus": {},
+    "speed_roll": "4d4",
+    "sdc_roll": "1d6",
+    "extra_attacks": [],
+    "notes": []
+  },
+  "Swimming": {
+    "attribute_bonus": {},
+    "combat_bonus": {},
+    "extra_attacks": [],
+    "notes": []
+  },
+  "Advanced Swimming": {
+    "attribute_bonus": {"PS": 1, "PE": 1},
+    "combat_bonus": {},
+    "sdc_roll": "1d6",
+    "swim_speed_roll": "3d4",
+    "extra_attacks": [],
+    "notes": []
+  },
+  "Wrestling": {
+    "attribute_bonus": {"PS": 1, "PE": 1},
+    "combat_bonus": {"roll_with_impact": 1, "pull_punch": 1},
+    "sdc_roll": "1d12",
+    "extra_attacks": ["Throw Attack", "Crush Attack", "Hold on Critical"],
+    "notes": [
+      "Throw Attack deals +2 damage.",
+      "Crush Attack deals +4 unarmed damage to held target; target cannot Parry or Dodge.",
+      "Critical Strike with unarmed melee automatically gets a Hold."
+    ]
+  }
+}

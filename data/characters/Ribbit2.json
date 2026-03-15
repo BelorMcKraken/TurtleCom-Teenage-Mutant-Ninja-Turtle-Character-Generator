@@ -7,7 +7,7 @@
   "gender": "Unknown",
   "weight": "62 lbs",
   "height": "3' 9\"",
-  "size": "6 (Medium)",
+  "size": "1 (Short)",
   "xp": 0,
   "level": 1,
   "hit_points": 0,
@@ -74,7 +74,7 @@
   },
   "bio_e": {
     "total": 80,
-    "spent": 80,
+    "spent": 0,
     "traits": [],
     "original": {
       "size_level": "2",
@@ -82,61 +82,27 @@
       "weight": "3 lbs",
       "build": "Medium"
     },
-    "mutant_size_level": 6,
+    "mutant_size_level": 2,
     "human_features": {
-      "hands_cost": 10,
-      "biped_cost": 10,
-      "speech_cost": 5,
+      "hands_cost": 0,
+      "biped_cost": 0,
+      "speech_cost": 0,
       "looks_cost": 0,
-      "hands_label": "Full (10 Bio-E)",
-      "biped_label": "Full (10 Bio-E)",
-      "speech_label": "Partial (5 Bio-E)",
+      "hands_label": "None (0 Bio-E)",
+      "biped_label": "None (0 Bio-E)",
+      "speech_label": "None (0 Bio-E)",
       "looks_label": "None (0 Bio-E)"
     },
     "natural_weapons": [],
-    "abilities": [
-      {
-        "name": "Master Swimmer",
-        "cost": 5
-      },
-      {
-        "name": "Leaping",
-        "cost": 5
-      },
-      {
-        "name": "Hold Breath",
-        "cost": 5
-      }
-    ],
-    "psionics": [
-      {
-        "name": "Sixth Sense",
-        "cost": 10
-      },
-      {
-        "name": "Telepathy",
-        "cost": 10
-      }
-    ],
+    "abilities": [],
+    "psionics": [],
     "animal_source": "tmntos",
     "animal_type": "Urban Animals",
     "animal": "Frog",
-    "mutant_size_label": "6",
-    "image_path": "",
-    "mutant_origin": {
-      "name": "Deliberate Experimentation",
-      "details": "An organization performed some kind of laboratory experiment on the animal to cause the mutation. First roll on the Creator Organization table, then roll again on the Deliberate Experimentation outcome table."
-    },
-    "background_education": {
-      "name": "Fringe-Society Education",
-      "details": "By skulking around the fringes of society, the mutant picked up a rudimentary education. Gains Basic Combat Training, Prowl +15%, Climbing +15%. Amateur Skills: select 12. Special bonus: +2 PP, +2 MA, and +10% to all Perception checks. Equipment: scavenged 3D6x$250 in standard items."
-    },
-    "creator_organization": {
-      "name": "Secret Medical Experiment Organization",
-      "details": ""
-    }
+    "mutant_size_label": "2",
+    "image_path": ""
   },
   "uid": "2026-03-09T20:16:08",
   "created_at": "2026-03-09T20:16:08",
-  "updated_at": "2026-03-15T13:17:33"
+  "updated_at": "2026-03-15T13:00:37"
 }

@@ -1,0 +1,8 @@
+[
+  { "name": "None (0 Bio-E)", "bio_e": 0 },
+  { "name": "Mind Block (10 Bio-E)", "bio_e": 10 },
+  { "name": "Telepathy (10 Bio-E)", "bio_e": 10 },
+  { "name": "Object Read (10 Bio-E)", "bio_e": 10 },
+  { "name": "Sixth Sense (10 Bio-E)", "bio_e": 10 },
+  { "name": "Empathy (10 Bio-E)", "bio_e": 10 }
+]
