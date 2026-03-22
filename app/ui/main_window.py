@@ -5,6 +5,8 @@ from typing import Optional, Any, Tuple, List
 import json
 import random
 import re
+import copy
+import subprocess
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QPixmap, QAction
@@ -36,8 +38,10 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
+
 from app.config import CHARACTERS_DIR, DATA_DIR, project_root
 from app.models import Character
+from app.services.export_statblock_pdf import export_statblock_pdf
 from app.services import (
     list_character_files,
     load_character,
@@ -61,6 +65,14 @@ from app.rules.bioe_lookup import BIOE_ANIMAL_ALIASES, BIOE_DEFAULT_ANIMAL, bioe
 from app.rules.physical_skill_effects import PHYSICAL_SKILL_EFFECTS
 from app.rules.human_features import HUMAN_FEATURE_OPTIONS
 from app.rules.psionic_powers import PSIONIC_POWER_OPTIONS
+from app.rules.psionic_catalog import (
+    PSIONIC_CATEGORY_MUTANT_ANIMAL,
+    PSIONIC_CATEGORY_MUTANT_HOMINID,
+    PSIONIC_CATEGORY_MUTANT_PROSTHETIC,
+    PSIONIC_CATEGORY_MUTANT_HUMAN_ABILITIES,
+    PSIONIC_CATEGORY_MUTANT_HOMINID_ABILITIES,
+    get_psionic_catalog_options,
+)
 from app.rules.size_levels import SIZE_LEVEL_EFFECTS, SIZE_LEVEL_FORMULAS
 from app.rules.combat import BASELINE_COMBAT, COMBAT_TRAINING_RULES
 from app.rules.tmntos_animals import TMNTOS_ANIMAL_TYPE_RANGES, TMNTOS_ANIMALS_BY_TYPE
@@ -152,7 +164,7 @@ QComboBox::down-arrow:on {{
 }}
 """
 APP_NAME = "TurtleCom"
-APP_VERSION = "v2"
+APP_VERSION = "v3"
 
 # ---------------- Dark theme (no arrow images here) ----------------
 DARK_QSS = """
@@ -417,6 +429,7 @@ class MainWindow(QMainWindow):
         self._build_welcome_page()
         self._build_editor_page()
 
+
         self.statusBar().showMessage("Ready")
         self.version_label = QLabel(APP_VERSION)
         self.statusBar().addPermanentWidget(self.version_label)
@@ -427,6 +440,100 @@ class MainWindow(QMainWindow):
 
         self.stack.setCurrentWidget(self.welcome_page)
 
+    def on_export_statblock_pdf(self) -> None:
+        c = self.editor_to_character()
+
+        suggested_name = f"{c.default_filename().replace('.json', '')}.statblock.pdf"
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Statblock PDF",
+            str(CHARACTERS_DIR / suggested_name),
+            "PDF Files (*.pdf)",
+        )
+        if not path_str:
+            return
+
+        out_path = Path(path_str)
+        if out_path.suffix.lower() != ".pdf":
+            out_path = out_path.with_suffix(".pdf")
+
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            export_statblock_pdf(c, out_path)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Export failed",
+                f"Could not export statblock PDF:\n{out_path}\n\n{e}",
+            )
+            return
+
+        self.statusBar().showMessage(f"Exported statblock PDF: {out_path.name}", 4000)
+
+    def build_foundry_export_payload(self) -> dict[str, Any]:
+        c = self.editor_to_character()
+
+        payload: dict[str, Any] = {
+            "format": "tmntos-foundry-placeholder",
+            "version": 1,
+            "character": {
+                "name": c.name,
+                "animal": getattr(c, "animal", ""),
+                "alignment": getattr(c, "alignment", ""),
+                "age": getattr(c, "age", ""),
+                "gender": getattr(c, "gender", ""),
+                "weight": getattr(c, "weight", ""),
+                "height": getattr(c, "height", ""),
+                "size": getattr(c, "size", ""),
+                "level": getattr(c, "level", 1),
+                "xp": getattr(c, "xp", 0),
+                "hit_points": getattr(c, "hit_points", 0),
+                "sdc": getattr(c, "sdc", 0),
+                "attributes": copy.deepcopy(getattr(c, "attributes", {})),
+                "skills": copy.deepcopy(getattr(c, "skills", {})),
+                "combat": copy.deepcopy(getattr(c, "combat", {})),
+                "bio_e": copy.deepcopy(getattr(c, "bio_e", {})),
+                "vehicles": copy.deepcopy(getattr(c, "vehicles", {})),
+                "weapons_selected": copy.deepcopy(getattr(c, "weapons_selected", [])),
+                "gear_selected": copy.deepcopy(getattr(c, "gear_selected", [])),
+                "armor_name": getattr(c, "armor_name", ""),
+                "armor_ar": getattr(c, "armor_ar", 0),
+                "armor_sdc": getattr(c, "armor_sdc", 0),
+                "armor_type": getattr(c, "armor_type", ""),
+                "shield_type": getattr(c, "shield_type", ""),
+                "shield_notes": getattr(c, "shield_notes", ""),
+                "notes": getattr(c, "notes", ""),
+            },
+        }
+        return payload
+
+
+    def on_export_foundry_json(self) -> None:
+        payload = self.build_foundry_export_payload()
+
+        suggested_name = f"{self.editor_to_character().default_filename().replace('.json', '')}.foundry.json"
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export JSON for Foundry VTT",
+            str(CHARACTERS_DIR / suggested_name),
+            "JSON Files (*.json)",
+        )
+        if not path_str:
+            return
+
+        path = Path(path_str)
+        if path.suffix.lower() != ".json":
+            path = path.with_suffix(".json")
+
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            QMessageBox.critical(self, "Export failed", f"Could not export Foundry JSON:\n{path}\n\n{e}")
+            return
+
+        self.statusBar().showMessage(f"Exported Foundry JSON: {path.name}", 4000)
 
     def on_mutant_origin_changed(self) -> None:
         selected = str(self.cb_mutant_origin.currentData() or "")
@@ -467,6 +574,420 @@ class MainWindow(QMainWindow):
                 break
 
         self.ed_creator_organization_details.setPlainText(details)
+
+
+    def build_pdf_field_map(self) -> dict[str, str]:
+        c = self.editor_to_character()
+
+        attrs = getattr(c, "attributes", {}) or {}
+        combat = getattr(c, "combat", {}) or {}
+        bio_e = getattr(c, "bio_e", {}) or {}
+        human_features = bio_e.get("human_features", {}) or {}
+        original = bio_e.get("original", {}) or {}
+
+        weapons_selected = list(getattr(c, "weapons_selected", []) or [])
+        gear_selected = list(getattr(c, "gear_selected", []) or [])
+        pro_skills = list(getattr(c, "skills", {}).get("pro", []) or [])
+        amateur_skills = list(getattr(c, "skills", {}).get("amateur", []) or [])
+
+        natural_weapons = list(bio_e.get("natural_weapons", []) or [])
+        animal_abilities = list(bio_e.get("abilities", []) or [])
+
+        mutant_animal_psionics = list(
+            bio_e.get("mutant_animal_psionic_powers", []) or bio_e.get("psionics", []) or []
+        )
+        mutant_hominid_psionics = list(bio_e.get("mutant_hominid_psionic_powers", []) or [])
+        mutant_prosthetic_psionics = list(bio_e.get("mutant_prosthetic_psionic_powers", []) or [])
+        mutant_human_abilities = list(bio_e.get("mutant_human_abilities", []) or [])
+        mutant_hominid_abilities = list(bio_e.get("mutant_hominid_abilities", []) or [])
+
+        armor_type = str(getattr(c, "armor_type", "") or "")
+        shield_type = str(getattr(c, "shield_type", "") or "")
+        shield_notes = str(getattr(c, "shield_notes", "") or "")
+
+        armor_lookup = ARMOR_BY_NAME.get(armor_type, {}) if armor_type else {}
+        shield_lookup = SHIELD_BY_NAME.get(shield_type, {}) if shield_type else {}
+
+        def text(value: Any) -> str:
+            if value is None:
+                return ""
+            return str(value)
+
+        def non_empty(*values: Any) -> str:
+            for value in values:
+                s = text(value).strip()
+                if s:
+                    return s
+            return ""
+
+        def list_item_name(items: list[Any], index: int) -> str:
+            if index >= len(items):
+                return ""
+            item = items[index]
+            if isinstance(item, dict):
+                return str(item.get("name", "") or "")
+            return str(item or "")
+
+        def list_item_cost(items: list[Any], index: int) -> str:
+            if index >= len(items):
+                return ""
+            item = items[index]
+            if isinstance(item, dict):
+                return str(item.get("cost", "") or "")
+            return ""
+
+        def total_cost(items: list[Any]) -> int:
+            total = 0
+            for item in items:
+                if isinstance(item, dict):
+                    total += int(item.get("cost", 0) or 0)
+            return total
+
+        def weapon_details(name: str) -> dict[str, str]:
+            raw = WEAPONS_BY_NAME.get(name, {}) if name else {}
+            if not isinstance(raw, dict):
+                raw = {}
+
+            return {
+                "name": name or "",
+                "type": non_empty(raw.get("type"), raw.get("category"), raw.get("class")),
+                "damage": non_empty(raw.get("damage"), raw.get("dmg"), raw.get("md")),
+                "range": non_empty(raw.get("range"), raw.get("effective_range"), raw.get("distance")),
+                "notes": non_empty(raw.get("notes"), raw.get("special"), raw.get("description"), raw.get("ammo")),
+            }
+
+        field_map: dict[str, str] = {
+            # --- Basics / page 1 ---
+            "Name": text(c.name),
+            "Animal": text(getattr(c, "animal", "")),
+            "Alignment": text(getattr(c, "alignment", "")),
+            "Disposition.0": text(getattr(c, "disposition", "")),
+            "Age": text(getattr(c, "age", "")),
+            "Gender": text(getattr(c, "gender", "")),
+            "Weight": text(getattr(c, "weight", "")),
+            "Height": text(getattr(c, "height", "")),
+            "Exp": text(getattr(c, "xp", "")),
+            "Level": text(getattr(c, "level", "")),
+            "Hit.Points": text(getattr(c, "hit_points", "")),
+            "SDC": text(getattr(c, "sdc", "")),
+
+            # --- Size / form ---
+            "Origin.Animal.Size": text(original.get("size_level", "") or getattr(c, "size", "")),
+            "Mutant.Form.Size": text(bio_e.get("mutant_size_label", "") or getattr(c, "size", "")),
+
+            # --- Armor / shield ---
+            "Armor.Type": non_empty(getattr(c, "armor_name", ""), armor_type),
+            "Armor.Rating": text(getattr(c, "armor_ar", "")),
+            "Armor.SDC": text(getattr(c, "armor_sdc", "")),
+            "Armor.Weight": non_empty(
+                getattr(c, "armor_wt", ""),
+                armor_lookup.get("weight"),
+                armor_lookup.get("wt"),
+            ),
+            "Armor.Properties.0": non_empty(
+                getattr(c, "armor_properties", ""),
+                armor_lookup.get("properties"),
+                armor_lookup.get("notes"),
+            ),
+            "Armor.Properties.1": non_empty(
+                f"Shield: {shield_type}" if shield_type else "",
+                shield_notes,
+                shield_lookup.get("notes"),
+            ),
+
+            # --- Combat ---
+            "Combat.Style": text(combat.get("training", "")),
+            "Actions": text(combat.get("actions_per_round", "")),
+            "Initiative": text(combat.get("initiative", "")),
+            "Melee.Strike": text(combat.get("strike", "")),
+            "Melee.Parry": text(combat.get("parry", "")),
+            "Dodge": text(combat.get("dodge", "")),
+            "Roll": text(combat.get("roll_with_impact", "")),
+
+            # --- Attributes ---
+            "Intelligence": text(attrs.get("IQ", "")),
+            "Mental.Endurance": text(attrs.get("ME", "")),
+            "Mental.Affinity": text(attrs.get("MA", "")),
+            "Physical.Strength": text(attrs.get("PS", "")),
+            "Physical.Prowess": text(attrs.get("PP", "")),
+            "Physical.Endurance": text(attrs.get("PE", "")),
+            "Physical.Beauty": text(attrs.get("PB", "")),
+            "Speed": text(attrs.get("Speed", "")),
+
+            # --- Skills ---
+            "Scholastic.Skills.0": text(pro_skills[0] if len(pro_skills) > 0 else ""),
+            "Scholastic.Skills.1": text(pro_skills[1] if len(pro_skills) > 1 else ""),
+            "Scholastic.Skills.2": text(pro_skills[2] if len(pro_skills) > 2 else ""),
+            "Scholastic.Skills.3": text(pro_skills[3] if len(pro_skills) > 3 else ""),
+            "Scholastic.Skills.4": text(pro_skills[4] if len(pro_skills) > 4 else ""),
+            "Scholastic.Skills.5": text(pro_skills[5] if len(pro_skills) > 5 else ""),
+            "Scholastic.Skills.6": text(pro_skills[6] if len(pro_skills) > 6 else ""),
+            "Scholastic.Skills.7": text(pro_skills[7] if len(pro_skills) > 7 else ""),
+            "Scholastic.Skills.8": text(pro_skills[8] if len(pro_skills) > 8 else ""),
+            "Scholastic.Skills.9": text(pro_skills[9] if len(pro_skills) > 9 else ""),
+            "Scholastic.Skills.10": text(pro_skills[10] if len(pro_skills) > 10 else ""),
+            "Scholastic.Skills.11": text(pro_skills[11] if len(pro_skills) > 11 else ""),
+
+            "Secondary.Skills.0": text(amateur_skills[0] if len(amateur_skills) > 0 else ""),
+            "Secondary.Skills.1": text(amateur_skills[1] if len(amateur_skills) > 1 else ""),
+            "Secondary.Skills.2": text(amateur_skills[2] if len(amateur_skills) > 2 else ""),
+            "Secondary.Skills.3": text(amateur_skills[3] if len(amateur_skills) > 3 else ""),
+            "Secondary.Skills.4": text(amateur_skills[4] if len(amateur_skills) > 4 else ""),
+            "Secondary.Skills.5": text(amateur_skills[5] if len(amateur_skills) > 5 else ""),
+            "Secondary.Skills.6": text(amateur_skills[6] if len(amateur_skills) > 6 else ""),
+            "Secondary.Skills.7": text(amateur_skills[7] if len(amateur_skills) > 7 else ""),
+            "Secondary.Skills.8": text(amateur_skills[8] if len(amateur_skills) > 8 else ""),
+            "Secondary.Skills.9": text(amateur_skills[9] if len(amateur_skills) > 9 else ""),
+            "Secondary.Skills.10": text(amateur_skills[10] if len(amateur_skills) > 10 else ""),
+            "Secondary.Skills.11": text(amateur_skills[11] if len(amateur_skills) > 11 else ""),
+
+            # --- Weapons ---
+            "Equipment.Valuables.1": text(getattr(c, "total_credits", "")),
+            "Equipment.Valuables.2": text(getattr(c, "total_wealth", "")),
+
+            # --- Gear / overflow notes ---
+            "Equipment.Valuables.3": text(gear_selected[0] if len(gear_selected) > 0 else ""),
+            "Equipment.Valuables.4": text(gear_selected[1] if len(gear_selected) > 1 else ""),
+            "Ch.Notes.0": text(gear_selected[2] if len(gear_selected) > 2 else ""),
+            "Ch.Notes.1": text(gear_selected[3] if len(gear_selected) > 3 else ""),
+            "Ch.Notes.2": text(gear_selected[4] if len(gear_selected) > 4 else ""),
+            "Ch.Notes.3": text(gear_selected[5] if len(gear_selected) > 5 else ""),
+            "Ch.Notes.4": text(gear_selected[6] if len(gear_selected) > 6 else ""),
+            "Ch.Notes.5": text(gear_selected[7] if len(gear_selected) > 7 else ""),
+            "Ch.Notes.6": text(gear_selected[8] if len(gear_selected) > 8 else ""),
+            "Ch.Notes.7": text(gear_selected[9] if len(gear_selected) > 9 else ""),
+
+            # --- Mutant origin / background / creator ---
+            "Origin.Mutant": text(bio_e.get("mutant_origin", {}).get("name", "")),
+            "Build.Notes.0": text(bio_e.get("mutant_origin", {}).get("details", "")),
+            "Build.Notes.1": text(bio_e.get("background_education", {}).get("name", "")),
+            "Build.Notes.2": text(bio_e.get("creator_organization", {}).get("name", "")),
+            "Build.Notes.3": text(bio_e.get("background_education", {}).get("details", "")),
+            "Build.Notes.4": text(bio_e.get("creator_organization", {}).get("details", "")),
+            "Build.Notes.5": text(getattr(c, "notes", "")),
+
+            # --- Original animal / Bio-E summary ---
+            "Starting.BioE": text(bio_e.get("total", "")),
+            "Final.BioE.Cost": text(bio_e.get("spent", "")),
+            "BioE.Cost.Mutant.Form.Size": text(SIZE_LEVEL_EFFECTS.get(int(bio_e.get("mutant_size_level", 0) or 0), {}).get("bio_e", "")),
+            "Human.Features.Biped.0": text(human_features.get("biped_label", "")),
+            "Human.Features.Hands.0": text(human_features.get("hands_label", "")),
+            "Human.Features.Speech.0": text(human_features.get("speech_label", "")),
+            "Human.Features.Looks.0": text(human_features.get("looks_label", "")),
+            "BioE.Cost.Human.Features.Biped": text(human_features.get("biped_cost", "")),
+            "BioE.Cost.Human.Features.Hands": text(human_features.get("hands_cost", "")),
+            "BioE.Cost.Human.Features.Speech": text(human_features.get("speech_cost", "")),
+            "BioE.Cost.Human.Features.Looks": text(human_features.get("looks_cost", "")),
+            "BioE.Cost.Human.Features.Total": text(
+                int(human_features.get("biped_cost", 0) or 0)
+                + int(human_features.get("hands_cost", 0) or 0)
+                + int(human_features.get("speech_cost", 0) or 0)
+                + int(human_features.get("looks_cost", 0) or 0)
+            ),
+
+            # --- Natural weapons / animal abilities ---
+            "Abilities.Animal.Teeth": text(list_item_name(natural_weapons, 0)),
+            "Abilities.Animal.Claws": text(list_item_name(natural_weapons, 1)),
+            "Abilities.Animal.Horns": text(list_item_name(natural_weapons, 2)),
+            "Abilities.Animal.Other.0": text(list_item_name(animal_abilities, 0)),
+            "Abilities.Animal.Other.1": text(list_item_name(animal_abilities, 1)),
+            "Abilities.Animal.Other.2": text(list_item_name(animal_abilities, 2)),
+            "Abilities.Animal.Other.3": text(list_item_name(animal_abilities, 3)),
+            "Abilities.Animal.Other.4": text(list_item_name(animal_abilities, 4)),
+
+            "BioE.Cost.Teeth.Abilities": text(list_item_cost(natural_weapons, 0)),
+            "BioE.Cost.Claws.Abilities": text(list_item_cost(natural_weapons, 1)),
+            "BioE.Cost.Horns.Abilities": text(list_item_cost(natural_weapons, 2)),
+            "BioE.Cost.Other.Abilities.0": text(list_item_cost(animal_abilities, 0)),
+            "BioE.Cost.Other.Abilities.1": text(list_item_cost(animal_abilities, 1)),
+            "BioE.Cost.Other.Abilities.2": text(list_item_cost(animal_abilities, 2)),
+            "BioE.Cost.Other.Abilities.3": text(list_item_cost(animal_abilities, 3)),
+            "BioE.Cost.Other.Abilities.4": text(list_item_cost(animal_abilities, 4)),
+
+            # --- Mutant animal psionics ---
+            "Psionic.Spell.Name.0": text(list_item_name(mutant_animal_psionics, 0)),
+            "Psionic.Spell.Name.1": text(list_item_name(mutant_animal_psionics, 1)),
+            "Psionic.Spell.Name.2": text(list_item_name(mutant_animal_psionics, 2)),
+            "Psionic.Spell.Name.3": text(list_item_name(mutant_animal_psionics, 3)),
+            "Psionic.Spell.Name.4": text(list_item_name(mutant_animal_psionics, 4)),
+            "Psionic.Spell.Name.5": text(list_item_name(mutant_animal_psionics, 5)),
+            "Psionic.Spell.Name.6": text(list_item_name(mutant_animal_psionics, 6)),
+            "Psionic.Spell.Name.7": text(list_item_name(mutant_animal_psionics, 7)),
+
+            # --- Mutant hominid psionics / prosthetic / abilities overflow into notes ---
+            "Ch.Notes.8": text(list_item_name(mutant_hominid_psionics, 0)),
+            "Ch.Notes.9": text(list_item_name(mutant_hominid_psionics, 1)),
+            "Ch.Notes.10": text(list_item_name(mutant_hominid_psionics, 2)),
+            "Ch.Notes.11": text(list_item_name(mutant_prosthetic_psionics, 0)),
+            "Ch.Notes.12": text(list_item_name(mutant_human_abilities, 0)),
+
+            "Total.Cost.Mutant.Psionics": text(
+                total_cost(mutant_animal_psionics)
+                + total_cost(mutant_hominid_psionics)
+                + total_cost(mutant_prosthetic_psionics)
+            ),
+            "Total.Cost.Mutant.Abilities": text(
+                total_cost(animal_abilities)
+                + total_cost(mutant_human_abilities)
+                + total_cost(mutant_hominid_abilities)
+            ),
+        }
+
+        # --- Weapon rows ---
+        weapon_names = [w for w in weapons_selected if str(w).strip()]
+        for i, name in enumerate(weapon_names[:6]):
+            details = weapon_details(str(name).strip())
+            field_map[f"Weapon.Proficiency.{i}"] = details["name"]
+            field_map[f"Type.Weapon.{i}"] = details["type"]
+            field_map[f"W.Damage.{i}"] = details["damage"]
+            field_map[f"W.Range.{i}"] = details["range"]
+            field_map[f"W.Notes.{i}"] = details["notes"]
+
+        overflow_lines: list[str] = []
+
+        if mutant_hominid_psionics:
+            overflow_lines.append("Mutant Hominid Psionic Powers:")
+            overflow_lines.extend(
+                f"- {item.get('name', '')} ({item.get('cost', 0)} Bio-E)"
+                for item in mutant_hominid_psionics
+                if isinstance(item, dict)
+            )
+
+        if mutant_prosthetic_psionics:
+            overflow_lines.append("Mutant Prosthetic Psionic Powers:")
+            overflow_lines.extend(
+                f"- {item.get('name', '')} ({item.get('cost', 0)} Bio-E)"
+                for item in mutant_prosthetic_psionics
+                if isinstance(item, dict)
+            )
+
+        if mutant_human_abilities:
+            overflow_lines.append("Mutant Human Abilities:")
+            overflow_lines.extend(
+                f"- {item.get('name', '')} ({item.get('cost', 0)} Bio-E)"
+                for item in mutant_human_abilities
+                if isinstance(item, dict)
+            )
+
+        if mutant_hominid_abilities:
+            overflow_lines.append("Mutant Hominid Abilities:")
+            overflow_lines.extend(
+                f"- {item.get('name', '')} ({item.get('cost', 0)} Bio-E)"
+                for item in mutant_hominid_abilities
+                if isinstance(item, dict)
+            )
+
+        extra_note_fields = [
+            "Build.Notes.6",
+            "Build.Notes.7",
+            "Build.Notes.8",
+            "Build.Notes.9",
+            "Build.Notes.10",
+            "Build.Notes.11",
+            "Build.Notes.12",
+        ]
+
+        for i, line in enumerate(overflow_lines[: len(extra_note_fields)]):
+            field_map[extra_note_fields[i]] = line
+
+        selected_static_labels: list[str] = []
+
+        def add_selected_names(items: list[Any]) -> None:
+            for item in items:
+                if isinstance(item, dict):
+                    name = str(item.get("name", "") or "").strip()
+                else:
+                    name = str(item or "").strip()
+                if name:
+                    selected_static_labels.append(name)
+
+        add_selected_names(natural_weapons)
+        add_selected_names(animal_abilities)
+        add_selected_names(mutant_animal_psionics)
+        add_selected_names(mutant_hominid_psionics)
+        add_selected_names(mutant_prosthetic_psionics)
+        add_selected_names(mutant_human_abilities)
+        add_selected_names(mutant_hominid_abilities)
+
+        field_map["__SELECTED_STATIC_LABELS__"] = "\n".join(sorted(set(selected_static_labels), key=str.lower))
+
+        return field_map
+
+
+    def on_export_pdf_flattened(self) -> None:
+        template_path = project_root() / "assets" / "pdf" / "TMNTOS Redux Character Sheet Fillable.pdf"
+        if not template_path.exists():
+            fallback = project_root() / "TMNTOS Redux Character Sheet Fillable.pdf"
+            template_path = fallback
+
+        if not template_path.exists():
+            QMessageBox.critical(
+                self,
+                "Export failed",
+                "Could not find the TMNTOS fillable PDF template.",
+            )
+            return
+
+        suggested_name = f"{self.editor_to_character().default_filename().replace('.json', '')}.pdf"
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export to PDF",
+            str(CHARACTERS_DIR / suggested_name),
+            "PDF Files (*.pdf)",
+        )
+        if not path_str:
+            return
+
+        out_path = Path(path_str)
+        if out_path.suffix.lower() != ".pdf":
+            out_path = out_path.with_suffix(".pdf")
+
+        payload_path = CHARACTERS_DIR / "_tmp_pdf_fields.json"
+
+        try:
+            payload_path.parent.mkdir(parents=True, exist_ok=True)
+            payload_path.write_text(
+                json.dumps(self.build_pdf_field_map(), indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            script_path = project_root() / "tools" / "fill_pdf_form.mjs"
+
+            result = subprocess.run(
+                [
+                    "node",
+                    str(script_path),
+                    str(template_path),
+                    str(out_path),
+                    str(payload_path),
+                    "--debug-grid",
+                    "--flatten",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(
+                    result.stderr.strip() or result.stdout.strip() or "Unknown PDF export error"
+                )
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Export failed",
+                f"Could not export PDF:\n{out_path}\n\n{e}",
+            )
+            return
+        finally:
+            try:
+                if payload_path.exists():
+                    payload_path.unlink()
+            except Exception:
+                pass
+
+        self.statusBar().showMessage(f"Exported PDF: {out_path.name}", 4000)
 
 
     def on_roll_mutant_origin(self) -> None:
@@ -555,6 +1076,20 @@ class MainWindow(QMainWindow):
         self.action_save_as.setShortcut("Ctrl+Shift+S")
         self.action_save_as.triggered.connect(self.on_save_as)
         file_menu.addAction(self.action_save_as)
+
+        file_menu.addSeparator()
+
+        self.action_export_foundry_json = QAction("Export JSON for &Foundry VTT...", self)
+        self.action_export_foundry_json.triggered.connect(self.on_export_foundry_json)
+        file_menu.addAction(self.action_export_foundry_json)
+
+        self.action_export_statblock_pdf = QAction("Export &Statblock PDF...", self)
+        self.action_export_statblock_pdf.triggered.connect(self.on_export_statblock_pdf)
+        file_menu.addAction(self.action_export_statblock_pdf)
+
+        self.action_export_pdf = QAction("Export to &PDF...", self)
+        self.action_export_pdf.triggered.connect(self.on_export_pdf_flattened)
+        file_menu.addAction(self.action_export_pdf)
 
         file_menu.addSeparator()
 
@@ -1201,25 +1736,6 @@ class MainWindow(QMainWindow):
 
         self.ed_name.setText(name)  
 
-    def on_bioe_animal_selected(self) -> None:
-        """
-        Called when the selected animal changes.
-        Updates the Bio-E tab data for the new animal.
-        """
-
-        animal = self.cb_animal.currentData()
-        if not animal:
-            return
-
-        try:
-            self.load_bioe_animal_data(animal)
-        except Exception:
-            pass
-
-        if hasattr(self, "recalc_bioe_spent"):
-            self.recalc_bioe_spent()
-
-
     def on_roll_size_clicked(self) -> None:
         size_level, size_build = roll_size_choice()
 
@@ -1237,7 +1753,18 @@ class MainWindow(QMainWindow):
         )
 
 
-        
+    def _make_bio_catalog_combo(
+        self,
+        options: list[tuple[str, int]],
+        none_label: str = "None (0 Bio-E)",
+    ) -> QComboBox:
+        cb = QComboBox()
+        cb.addItem(none_label, 0)
+        for name, cost in options:
+            cb.addItem(f"{name} ({cost} Bio-E)", cost)
+        cb.setCurrentIndex(0)
+        cb.currentIndexChanged.connect(self.recalc_bioe_spent)
+        return cb        
 
     # ---------------- Editor page ----------------
     def _build_editor_page(self) -> None:
@@ -1765,244 +2292,179 @@ class MainWindow(QMainWindow):
         self._set_combat_spinboxes_editable(False)
         self.combat_layout.addStretch(1)
 
-        # ===================== Bio-E tab =====================
+        # ===================== Bio-E / Mutant tab =====================
         self.bioe_layout = self.make_scrollable_tab(self.tab_bioe)
-        bio_outer = self.bioe_layout
 
-        totals_box = QGroupBox("Bio-E Totals")
-        totals_form = QFormLayout(totals_box)
+        bio_top = QFormLayout()
+        self.bioe_layout.addLayout(bio_top)
 
         self.sp_bio_total = QSpinBox()
-        self.sp_bio_spent = QSpinBox()
-        self.sp_bio_total.setRange(0, 100000)
-        self.sp_bio_spent.setRange(0, 100000)
+        self.sp_bio_total.setRange(0, 999)
         self.sp_bio_total.valueChanged.connect(self.recalc_bioe_spent)
+        bio_top.addRow("Starting Bio-E", self.sp_bio_total)
 
-        self.lbl_bio_remaining = QLabel("Remaining: 0")
-        self.lbl_bio_remaining.setMinimumWidth(180)
+        self.sp_bio_spent = QSpinBox()
+        self.sp_bio_spent.setRange(0, 999)
+        self.sp_bio_spent.setReadOnly(True)
+        bio_top.addRow("Spent Bio-E", self.sp_bio_spent)
 
-        totals_row = QWidget()
-        totals_row_l = QHBoxLayout()
-        totals_row_l.setContentsMargins(0, 0, 0, 0)
-        totals_row.setLayout(totals_row_l)
-        totals_row_l.addWidget(self.sp_bio_total, 0)
-        totals_row_l.addSpacing(12)
-        totals_row_l.addWidget(self.lbl_bio_remaining, 1)
-
-        totals_form.addRow("Total Bio-E", totals_row)
-        totals_form.addRow("Spent Bio-E", self.sp_bio_spent)
-
-        bio_outer.addWidget(totals_box)
-
-        original_box = QGroupBox("Original Animal Characteristics")
-        original_form = QFormLayout(original_box)
+        orig_box = QGroupBox("Original Animal")
+        orig_form = QFormLayout(orig_box)
 
         self.ed_bio_orig_size_level = QLineEdit()
         self.ed_bio_orig_size_level.setReadOnly(True)
+        orig_form.addRow("Size Level", self.ed_bio_orig_size_level)
 
         self.ed_bio_orig_length = QLineEdit()
         self.ed_bio_orig_length.setReadOnly(True)
+        orig_form.addRow("Length", self.ed_bio_orig_length)
 
         self.ed_bio_orig_weight = QLineEdit()
         self.ed_bio_orig_weight.setReadOnly(True)
+        orig_form.addRow("Weight", self.ed_bio_orig_weight)
 
         self.ed_bio_orig_build = QLineEdit()
         self.ed_bio_orig_build.setReadOnly(True)
+        orig_form.addRow("Build", self.ed_bio_orig_build)
 
-        original_form.addRow("Size Level", self.ed_bio_orig_size_level)
-        original_form.addRow("Length", self.ed_bio_orig_length)
-        original_form.addRow("Weight", self.ed_bio_orig_weight)
-        original_form.addRow("Build", self.ed_bio_orig_build)
+        self.bioe_layout.addWidget(orig_box)
 
-        bio_outer.addWidget(original_box)
-
-        size_box = QGroupBox("Size Levels (Bio-E Spend)")
-        size_form = QFormLayout(size_box)
+        mutant_box = QGroupBox("Mutant Form / Human Features")
+        mutant_form = QFormLayout(mutant_box)
 
         self.cb_bio_mutant_size_level = QComboBox()
+        self.cb_bio_mutant_size_level.addItem("Select size level", 0)
         for lvl in range(1, 21):
             self.cb_bio_mutant_size_level.addItem(str(lvl), lvl)
-        self.lbl_bio_size_cost = QLabel("Cost: 0")
-        self.lbl_bio_size_cost.setMinimumWidth(120)
-
-        size_row = QWidget()
-        size_row_l = QHBoxLayout()
-        size_row_l.setContentsMargins(0, 0, 0, 0)
-        size_row.setLayout(size_row_l)
-        size_row_l.addWidget(self.cb_bio_mutant_size_level, 1)
-        size_row_l.addWidget(self.lbl_bio_size_cost, 0)
-
         self.cb_bio_mutant_size_level.currentIndexChanged.connect(self.recalc_bioe_spent)
-        size_form.addRow("Mutant Size Level", size_row)
+        mutant_form.addRow("Mutant Size Level", self.cb_bio_mutant_size_level)
 
-        bio_outer.addWidget(size_box)
-
-        mutant_box = QGroupBox("Mutant Changes & Costs")
-        mutant_l = QVBoxLayout(mutant_box)
-        self.ed_bio_mutant_changes = QTextEdit()
-        self.ed_bio_mutant_changes.setReadOnly(True)
-        self.ed_bio_mutant_changes.setMinimumHeight(110)
-        mutant_l.addWidget(self.ed_bio_mutant_changes)
-
-        bio_outer.addWidget(mutant_box)
-
-        bonus_box = QGroupBox("Attribute Bonuses")
-        bonus_form = QFormLayout(bonus_box)
-        self.ed_bio_attr_bonus = QTextEdit()
-        self.ed_bio_attr_bonus.setReadOnly(True)
-        self.ed_bio_attr_bonus.setMinimumHeight(70)
-        bonus_form.addRow("", self.ed_bio_attr_bonus)
-        bio_outer.addWidget(bonus_box)
-
-        human_box = QGroupBox("Human Features")
-        human_form = QFormLayout(human_box)
+        self.cb_human_biped = QComboBox()
+        for label, cost in HUMAN_FEATURE_OPTIONS:
+            self.cb_human_biped.addItem(label, cost)
+        self.cb_human_biped.currentIndexChanged.connect(self.recalc_bioe_spent)
+        mutant_form.addRow("Biped", self.cb_human_biped)
 
         self.cb_human_hands = QComboBox()
-        self.cb_human_biped = QComboBox()
+        for label, cost in HUMAN_FEATURE_OPTIONS:
+            self.cb_human_hands.addItem(label, cost)
+        self.cb_human_hands.currentIndexChanged.connect(self.recalc_bioe_spent)
+        mutant_form.addRow("Hands", self.cb_human_hands)
+
         self.cb_human_speech = QComboBox()
+        for label, cost in HUMAN_FEATURE_OPTIONS:
+            self.cb_human_speech.addItem(label, cost)
+        self.cb_human_speech.currentIndexChanged.connect(self.recalc_bioe_spent)
+        mutant_form.addRow("Speech", self.cb_human_speech)
+
         self.cb_human_looks = QComboBox()
+        for label, cost in HUMAN_FEATURE_OPTIONS:
+            self.cb_human_looks.addItem(label, cost)
+        self.cb_human_looks.currentIndexChanged.connect(self.recalc_bioe_spent)
+        mutant_form.addRow("Looks", self.cb_human_looks)
 
-        for cb in (self.cb_human_hands, self.cb_human_biped, self.cb_human_speech, self.cb_human_looks):
-            for label, cost in HUMAN_FEATURE_OPTIONS:
-                cb.addItem(label, cost)
-            cb.currentIndexChanged.connect(self.recalc_bioe_spent)
+        self.bioe_layout.addWidget(mutant_box)
 
-        human_form.addRow("Hands", self.cb_human_hands)
-        human_form.addRow("Biped", self.cb_human_biped)
-        human_form.addRow("Speech", self.cb_human_speech)
-        human_form.addRow("Looks", self.cb_human_looks)
-
-        bio_outer.addWidget(human_box)
-
-        weapons_box = QGroupBox("Natural Weapons")
-        weapons_form = QFormLayout(weapons_box)
-
-        self.bio_weapon_combos = []
-        self.bio_weapon_cost_labels = []
-        self.bio_weapon_detail_boxes = []
+        nw_box = QGroupBox("Natural Weapons")
+        nw_layout = QFormLayout(nw_box)
+        self.bio_weapon_combos: list[QComboBox] = []
 
         for i in range(5):
-            row = QWidget()
-            row_l = QVBoxLayout()
-            row_l.setContentsMargins(0, 0, 0, 0)
-            row.setLayout(row_l)
-
-            top = QWidget()
-            top_l = QHBoxLayout()
-            top_l.setContentsMargins(0, 0, 0, 0)
-            top.setLayout(top_l)
-
             cb = QComboBox()
-            cb.addItem("None", None)
-            cb.currentIndexChanged.connect(self.recalc_bioe_spent)
-
-            cost_lbl = QLabel("0")
-            cost_lbl.setMinimumWidth(80)
-
-            top_l.addWidget(cb, 1)
-            top_l.addWidget(QLabel("Cost:"), 0)
-            top_l.addWidget(cost_lbl, 0)
-
-            details = QTextEdit()
-            details.setReadOnly(True)
-            details.setMinimumHeight(45)
-
-            row_l.addWidget(top)
-            row_l.addWidget(details)
-
+            cb.addItem("None", {})
             self.bio_weapon_combos.append(cb)
-            self.bio_weapon_cost_labels.append(cost_lbl)
-            self.bio_weapon_detail_boxes.append(details)
-
-            weapons_form.addRow(f"Natural Weapon {i+1}", row)
-
-        bio_outer.addWidget(weapons_box)
-
-        abilities_box = QGroupBox("Animal Abilities")
-        abilities_form = QFormLayout(abilities_box)
-
-        self.bio_ability_combos = []
-        self.bio_ability_cost_labels = []
-        self.bio_ability_detail_boxes = []
-
-        for i in range(10):
-            row = QWidget()
-            row_l = QVBoxLayout()
-            row_l.setContentsMargins(0, 0, 0, 0)
-            row.setLayout(row_l)
-
-            top = QWidget()
-            top_l = QHBoxLayout()
-            top_l.setContentsMargins(0, 0, 0, 0)
-            top.setLayout(top_l)
-
-            cb = QComboBox()
-            cb.addItem("None", None)
             cb.currentIndexChanged.connect(self.recalc_bioe_spent)
+            nw_layout.addRow(f"Weapon {i + 1}", cb)
 
-            cost_lbl = QLabel("0")
-            cost_lbl.setMinimumWidth(80)
+        self.bioe_layout.addWidget(nw_box)
 
-            top_l.addWidget(cb, 1)
-            top_l.addWidget(QLabel("Cost:"), 0)
-            top_l.addWidget(cost_lbl, 0)
+        ability_box = QGroupBox("Animal Abilities")
+        ability_layout = QFormLayout(ability_box)
+        self.bio_ability_combos: list[QComboBox] = []
 
-            details = QTextEdit()
-            details.setReadOnly(True)
-            details.setMinimumHeight(45)
-
-            row_l.addWidget(top)
-            row_l.addWidget(details)
-
+        for i in range(8):
+            cb = QComboBox()
+            cb.addItem("None", {})
             self.bio_ability_combos.append(cb)
-            self.bio_ability_cost_labels.append(cost_lbl)
-            self.bio_ability_detail_boxes.append(details)
-
-            abilities_form.addRow(f"Ability {i+1}", row)
-
-        bio_outer.addWidget(abilities_box)
-
-        psionics_box = QGroupBox("Psionic Powers (ME 12+ required)")
-        psionics_form = QFormLayout(psionics_box)
-
-        self.bio_psionic_combos = []
-        self.bio_psionic_cost_labels = []
-
-        for i in range(5):
-            row = QWidget()
-            row_l = QHBoxLayout()
-            row_l.setContentsMargins(0, 0, 0, 0)
-            row.setLayout(row_l)
-
-            cb = QComboBox()
-            for label, cost in PSIONIC_POWER_OPTIONS:
-                cb.addItem(label, cost)
             cb.currentIndexChanged.connect(self.recalc_bioe_spent)
+            ability_layout.addRow(f"Ability {i + 1}", cb)
 
-            cost_lbl = QLabel("0")
-            cost_lbl.setMinimumWidth(80)
+        self.bioe_layout.addWidget(ability_box)
 
-            row_l.addWidget(cb, 1)
-            row_l.addWidget(QLabel("Cost:"), 0)
-            row_l.addWidget(cost_lbl, 0)
+        animal_psionic_box = QGroupBox("Mutant Animal Psionic Powers")
+        animal_psionic_layout = QFormLayout(animal_psionic_box)
+        self.bio_mutant_animal_psionic_combos: list[QComboBox] = []
 
-            self.bio_psionic_combos.append(cb)
-            self.bio_psionic_cost_labels.append(cost_lbl)
+        for i in range(6):
+            cb = self._make_bio_catalog_combo(
+                get_psionic_catalog_options(PSIONIC_CATEGORY_MUTANT_ANIMAL)
+            )
+            self.bio_mutant_animal_psionic_combos.append(cb)
+            animal_psionic_layout.addRow(f"Animal Psionic {i + 1}", cb)
 
-            psionics_form.addRow(f"Psionic {i+1}", row)
+        self.bioe_layout.addWidget(animal_psionic_box)
 
-        bio_outer.addWidget(psionics_box)
+        hominid_psionic_box = QGroupBox("Mutant Hominid Psionic Powers")
+        hominid_psionic_layout = QFormLayout(hominid_psionic_box)
+        self.bio_mutant_hominid_psionic_combos: list[QComboBox] = []
 
-        traits_box = QGroupBox("Bio-E Notes / Traits")
-        traits_form = QFormLayout(traits_box)
+        for i in range(6):
+            cb = self._make_bio_catalog_combo(
+                get_psionic_catalog_options(PSIONIC_CATEGORY_MUTANT_HOMINID)
+            )
+            self.bio_mutant_hominid_psionic_combos.append(cb)
+            hominid_psionic_layout.addRow(f"Hominid Psionic {i + 1}", cb)
+
+        self.bioe_layout.addWidget(hominid_psionic_box)
+
+        prosthetic_psionic_box = QGroupBox("Mutant Prosthetic Psionic Powers")
+        prosthetic_psionic_layout = QFormLayout(prosthetic_psionic_box)
+        self.bio_mutant_prosthetic_psionic_combos: list[QComboBox] = []
+
+        for i in range(3):
+            cb = self._make_bio_catalog_combo(
+                get_psionic_catalog_options(PSIONIC_CATEGORY_MUTANT_PROSTHETIC)
+            )
+            self.bio_mutant_prosthetic_psionic_combos.append(cb)
+            prosthetic_psionic_layout.addRow(f"Prosthetic Psionic {i + 1}", cb)
+
+        self.bioe_layout.addWidget(prosthetic_psionic_box)
+
+        human_ability_box = QGroupBox("Mutant Human Abilities")
+        human_ability_layout = QFormLayout(human_ability_box)
+        self.bio_mutant_human_ability_combos: list[QComboBox] = []
+
+        for i in range(8):
+            cb = self._make_bio_catalog_combo(
+                get_psionic_catalog_options(PSIONIC_CATEGORY_MUTANT_HUMAN_ABILITIES)
+            )
+            self.bio_mutant_human_ability_combos.append(cb)
+            human_ability_layout.addRow(f"Human Ability {i + 1}", cb)
+
+        self.bioe_layout.addWidget(human_ability_box)
+
+        hominid_ability_box = QGroupBox("Mutant Hominid Abilities")
+        hominid_ability_layout = QFormLayout(hominid_ability_box)
+        self.bio_mutant_hominid_ability_combos: list[QComboBox] = []
+
+        for i in range(8):
+            cb = self._make_bio_catalog_combo(
+                get_psionic_catalog_options(PSIONIC_CATEGORY_MUTANT_HOMINID_ABILITIES)
+            )
+            self.bio_mutant_hominid_ability_combos.append(cb)
+            hominid_ability_layout.addRow(f"Hominid Ability {i + 1}", cb)
+
+        self.bioe_layout.addWidget(hominid_ability_box)
+
+        traits_box = QGroupBox("Traits / Notes")
+        traits_layout = QVBoxLayout(traits_box)
+
         self.ed_traits = QTextEdit()
-        self.ed_traits.setPlaceholderText("One trait per line (or notes about Bio-E purchases)")
-        traits_form.addRow("", self.ed_traits)
-        bio_outer.addWidget(traits_box)
-        bio_outer.addStretch(1)
+        self.ed_traits.setPlaceholderText("One trait per line")
+        traits_layout.addWidget(self.ed_traits)
 
-        self.update_psionic_availability()
-        self.recalc_bioe_spent()
+        self.bioe_layout.addWidget(traits_box)
+        self.bioe_layout.addStretch(1)
 
         # ===================== Equipment tab =====================
         self.equipment_layout = self.make_scrollable_tab(self.tab_equipment)
@@ -2950,42 +3412,92 @@ class MainWindow(QMainWindow):
         self.recalc_bioe_spent()
 
     def on_bioe_animal_selected(self) -> None:
-        # Called when animal changes on Basics tab
-        animal = str(self.cb_animal.currentData() or "")
+        raw_data = str(self.cb_animal.currentData() or "").strip()
+        raw_text = str(self.cb_animal.currentText() or "").strip()
+        animal = raw_data or raw_text
+
+        if not animal:
+            if hasattr(self, "sp_bio_total"):
+                self.sp_bio_total.setValue(0)
+            if hasattr(self, "ed_bio_orig_size_level"):
+                self.ed_bio_orig_size_level.clear()
+            if hasattr(self, "ed_bio_orig_length"):
+                self.ed_bio_orig_length.clear()
+            if hasattr(self, "ed_bio_orig_weight"):
+                self.ed_bio_orig_weight.clear()
+            if hasattr(self, "ed_bio_orig_build"):
+                self.ed_bio_orig_build.clear()
+            return
+
         rule = self._bioe_get_animal_rule(animal)
+        if not isinstance(rule, dict):
+            rule = dict(BIOE_DEFAULT_ANIMAL)
 
-        # Set total Bio-E to animal starting Bio-E (this does NOT include size effects you add elsewhere)
+        original = rule.get("original", {}) or {}
 
-        self.sp_bio_total.setValue(int(rule.get("bio_e", 0) or 0))
+        if hasattr(self, "sp_bio_total"):
+            self.sp_bio_total.setValue(int(rule.get("bio_e", 0) or 0))
 
-        self._bioe_set_original_fields(rule.get("original", {}) if isinstance(rule.get("original"), dict) else {})
+        if hasattr(self, "ed_bio_orig_size_level"):
+            self.ed_bio_orig_size_level.setText(str(original.get("size_level", "") or ""))
 
-        self.ed_bio_mutant_changes.setPlainText(str(rule.get("mutant_changes_text", "") or ""))
+        if hasattr(self, "ed_bio_orig_length"):
+            length_value = original.get("length", "") or original.get("length_in", "")
+            if isinstance(length_value, int):
+                self.ed_bio_orig_length.setText(self.format_inches(length_value))
+            else:
+                self.ed_bio_orig_length.setText(str(length_value or ""))
 
-        # Attribute bonus summary
-        bonuses = rule.get("attribute_bonuses", {})
-        if isinstance(bonuses, dict) and bonuses:
-            parts = []
-            for k, v in bonuses.items():
-                if isinstance(v, int):
-                    sign = "+" if v >= 0 else ""
-                    parts.append(f"{k} {sign}{v}")
-            self.ed_bio_attr_bonus.setPlainText(", ".join(parts) if parts else "—")
-        else:
-            self.ed_bio_attr_bonus.setPlainText("—")
+        if hasattr(self, "ed_bio_orig_weight"):
+            weight_value = original.get("weight", "") or original.get("weight_lbs", "")
+            if isinstance(weight_value, int):
+                self.ed_bio_orig_weight.setText(f"{weight_value} lbs")
+            else:
+                self.ed_bio_orig_weight.setText(str(weight_value or ""))
 
-        self._bioe_populate_natural_weapons(rule.get("natural_weapons", []) if isinstance(rule.get("natural_weapons"), list) else [])
-        self._bioe_populate_abilities(rule.get("abilities", []) if isinstance(rule.get("abilities"), list) else [])
+        if hasattr(self, "ed_bio_orig_build"):
+            self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
 
-        # Reset human features to None
-        for cb in (self.cb_human_hands, self.cb_human_biped, self.cb_human_speech, self.cb_human_looks):
-            cb.setCurrentIndex(0)
+        if hasattr(self, "cb_bio_mutant_size_level"):
+            size_level = original.get("size_level", 0)
+            if isinstance(size_level, int) and 1 <= size_level <= 20:
+                idx = self.cb_bio_mutant_size_level.findData(size_level)
+                self.cb_bio_mutant_size_level.setCurrentIndex(idx if idx != -1 else 0)
 
-        # Reset psionics
-        for cb in getattr(self, "bio_psionic_combos", []):
-            cb.setCurrentIndex(0)
+        if hasattr(self, "bio_weapon_combos"):
+            weapon_options = rule.get("natural_weapons", []) or []
+            for cb in self.bio_weapon_combos:
+                current_text = cb.currentText().strip()
+                cb.blockSignals(True)
+                cb.clear()
+                cb.addItem("None", {})
+                for item in weapon_options:
+                    if isinstance(item, dict):
+                        name = str(item.get("name", "") or "").strip()
+                        cost = int(item.get("cost", 0) or 0)
+                        if name:
+                            cb.addItem(name, {"name": name, "cost": cost})
+                restore_idx = cb.findText(current_text, Qt.MatchFixedString)
+                cb.setCurrentIndex(restore_idx if restore_idx != -1 else 0)
+                cb.blockSignals(False)
 
-        self.update_psionic_availability()
+        if hasattr(self, "bio_ability_combos"):
+            ability_options = rule.get("abilities", []) or []
+            for cb in self.bio_ability_combos:
+                current_text = cb.currentText().strip()
+                cb.blockSignals(True)
+                cb.clear()
+                cb.addItem("None", {})
+                for item in ability_options:
+                    if isinstance(item, dict):
+                        name = str(item.get("name", "") or "").strip()
+                        cost = int(item.get("cost", 0) or 0)
+                        if name:
+                            cb.addItem(name, {"name": name, "cost": cost})
+                restore_idx = cb.findText(current_text, Qt.MatchFixedString)
+                cb.setCurrentIndex(restore_idx if restore_idx != -1 else 0)
+                cb.blockSignals(False)
+
         self.recalc_bioe_spent()
 
     def _bioe_size_level_cost(self) -> int:
@@ -3003,90 +3515,88 @@ class MainWindow(QMainWindow):
         return abs(chosen - orig) * 5
 
     def recalc_bioe_spent(self) -> None:
-        total_bio_e = int(self.sp_bio_total.value())
+        total_spent = 0
 
-        animal_name = str(self.cb_animal.currentData() or self.cb_animal.currentText() or "")
-        rule = self._bioe_get_animal_rule(animal_name)
+        def combo_cost(cb: QComboBox) -> int:
+            data = cb.currentData()
+            if isinstance(data, dict):
+                return int(data.get("cost", 0) or 0)
+            try:
+                return int(data or 0)
+            except Exception:
+                return 0
 
-        original = rule.get("original", {}) if isinstance(rule, dict) else {}
-        original_size = original.get("size_level", None)
+        def selected_catalog_entries(combo_attr_name: str) -> list[dict[str, int | str]]:
+            entries: list[dict[str, int | str]] = []
+            for cb in getattr(self, combo_attr_name, []):
+                label = str(cb.currentText() or "").strip()
+                cost = combo_cost(cb) if cb.isEnabled() else 0
+                if label and "None" not in label and cost > 0:
+                    entries.append({"name": label.split(" (", 1)[0], "cost": cost})
+            return entries
 
-        selected_size = self.cb_bio_mutant_size_level.currentData()
-        try:
-            selected_size_int = int(selected_size)
-        except (TypeError, ValueError):
-            selected_size_int = None
-
-        size_cost = 0
-        if isinstance(original_size, int) and isinstance(selected_size_int, int):
-            size_diff = selected_size_int - original_size
-            size_cost = size_diff * 5
-        self.lbl_bio_size_cost.setText(f"Cost: {size_cost:+d}")
-
-        spent = 0
-
+        # --- Human features ---
         for cb in (
-            self.cb_human_hands,
-            self.cb_human_biped,
-            self.cb_human_speech,
-            self.cb_human_looks,
+            getattr(self, "cb_human_hands", None),
+            getattr(self, "cb_human_biped", None),
+            getattr(self, "cb_human_speech", None),
+            getattr(self, "cb_human_looks", None),
         ):
-            value = cb.currentData()
-            if isinstance(value, int):
-                spent += value
+            if cb is not None:
+                total_spent += combo_cost(cb)
 
-        spent += size_cost
+        # --- Mutant size level cost/effects ---
+        mutant_size_level = 0
+        mutant_size_cb = getattr(self, "cb_bio_mutant_size_level", None)
+        if mutant_size_cb is not None:
+            try:
+                mutant_size_level = int(mutant_size_cb.currentData() or 0)
+            except Exception:
+                mutant_size_level = 0
 
-        for cb, lbl, details in zip(
-            self.bio_weapon_combos,
-            self.bio_weapon_cost_labels,
-            self.bio_weapon_detail_boxes,
-        ):
-            item = cb.currentData()
-            if isinstance(item, dict):
-                cost = int(item.get("cost", 0) or 0)
-                spent += cost
-                lbl.setText(str(cost))
-                details.setPlainText(str(item.get("details", "")))
-            else:
-                lbl.setText("0")
-                details.setPlainText("")
+        if mutant_size_level > 0:
+            size_effect = SIZE_LEVEL_EFFECTS.get(mutant_size_level, {})
+            total_spent += int(size_effect.get("bio_e", 0) or 0)
 
-        for cb, lbl, details in zip(
-            self.bio_ability_combos,
-            self.bio_ability_cost_labels,
-            self.bio_ability_detail_boxes,
-        ):
-            item = cb.currentData()
-            if isinstance(item, dict):
-                cost = int(item.get("cost", 0) or 0)
-                spent += cost
-                lbl.setText(str(cost))
-                details.setPlainText(str(item.get("details", "")))
-            else:
-                lbl.setText("0")
-                details.setPlainText("")
+        # --- Natural weapons ---
+        for cb in getattr(self, "bio_weapon_combos", []):
+            total_spent += combo_cost(cb)
 
-        me_value = int(self.attribute_fields.get("ME", QSpinBox()).value()) if "ME" in self.attribute_fields else 0
-        psionics_allowed = me_value >= 12
+        # --- Animal abilities ---
+        for cb in getattr(self, "bio_ability_combos", []):
+            total_spent += combo_cost(cb)
 
-        for cb, lbl in zip(self.bio_psionic_combos, self.bio_psionic_cost_labels):
-            cost = cb.currentData()
-            if not psionics_allowed:
-                lbl.setText("0")
-                continue
-            if isinstance(cost, int):
-                spent += cost
-                lbl.setText(str(cost))
-            else:
-                lbl.setText("0")
+        # --- New categorized psionics / abilities ---
+        mutant_animal_psionics = selected_catalog_entries("bio_mutant_animal_psionic_combos")
+        mutant_hominid_psionics = selected_catalog_entries("bio_mutant_hominid_psionic_combos")
+        mutant_prosthetic_psionics = selected_catalog_entries("bio_mutant_prosthetic_psionic_combos")
+        mutant_human_abilities = selected_catalog_entries("bio_mutant_human_ability_combos")
+        mutant_hominid_abilities = selected_catalog_entries("bio_mutant_hominid_ability_combos")
 
-        self.sp_bio_spent.blockSignals(True)
-        self.sp_bio_spent.setValue(spent)
-        self.sp_bio_spent.blockSignals(False)
+        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_animal_psionics)
+        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_hominid_psionics)
+        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_prosthetic_psionics)
+        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_human_abilities)
+        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_hominid_abilities)
 
-        remaining = total_bio_e - spent
-        self.lbl_bio_remaining.setText(f"Remaining: {remaining}")
+        # --- Keep original-animal fields refreshed if possible ---
+        animal_key = str(self.cb_animal.currentData() or "").strip()
+        animal_info = BIOE_ANIMAL_DATA.get(animal_key, BIOE_DEFAULT_ANIMAL) if animal_key else BIOE_DEFAULT_ANIMAL
+        original = animal_info.get("original", {}) if isinstance(animal_info, dict) else {}
+
+        if hasattr(self, "ed_bio_orig_size_level"):
+            self.ed_bio_orig_size_level.setText(str(original.get("size_level", "") or ""))
+        if hasattr(self, "ed_bio_orig_length"):
+            self.ed_bio_orig_length.setText(str(original.get("length", "") or original.get("length_in", "") or ""))
+        if hasattr(self, "ed_bio_orig_weight"):
+            self.ed_bio_orig_weight.setText(str(original.get("weight", "") or original.get("weight_lbs", "") or ""))
+        if hasattr(self, "ed_bio_orig_build"):
+            self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
+
+        if hasattr(self, "sp_bio_spent"):
+            self.sp_bio_spent.blockSignals(True)
+            self.sp_bio_spent.setValue(int(total_spent))
+            self.sp_bio_spent.blockSignals(False)
 
 
 
@@ -3333,56 +3843,74 @@ class MainWindow(QMainWindow):
     def editor_to_character(self) -> Character:
         c = self.current_character
 
-        image_path = ""
+        if not isinstance(getattr(c, "bio_e", None), dict):
+            c.bio_e = {}
+        if not isinstance(getattr(c, "attributes", None), dict):
+            c.attributes = {}
+        if not isinstance(getattr(c, "skills", None), dict):
+            c.skills = {"pro": [], "amateur": []}
+        if not isinstance(getattr(c, "combat", None), dict):
+            c.combat = {}
 
+        def combo_value(cb: QComboBox) -> str:
+            data = cb.currentData()
+            if data not in (None, ""):
+                return str(data).strip()
+            return str(cb.currentText() or "").strip()
+
+        def collect_catalog_entries(combo_attr_name: str) -> list[dict[str, Any]]:
+            entries: list[dict[str, Any]] = []
+            for cb in getattr(self, combo_attr_name, []):
+                label = str(cb.currentText() or "").strip()
+                cost = int(cb.currentData() or 0) if cb.isEnabled() else 0
+                if label and "None" not in label and cost > 0:
+                    entries.append({"name": label.split(" (", 1)[0], "cost": cost})
+            return entries
+
+        image_path = ""
         if hasattr(self, "current_image_path") and self.current_image_path:
             image_path = str(self.current_image_path).strip()
-        elif getattr(self.current_character, "image_path", None):
-            image_path = str(self.current_character.image_path).strip()
+        elif getattr(c, "image_path", None):
+            image_path = str(c.image_path).strip()
+        elif getattr(c, "bio_e", {}).get("image_path"):
+            image_path = str(c.bio_e.get("image_path", "")).strip()
 
-        if image_path:
-            try:
-                c.image_path = image_path
-            except Exception:
-                pass
-            c.bio_e["image_path"] = image_path
-        else:
-            try:
-                c.image_path = ""
-            except Exception:
-                pass
-            c.bio_e["image_path"] = ""
+        self.current_image_path = image_path
 
+        try:
+            c.image_path = image_path
+        except Exception:
+            pass
+
+        c.bio_e["image_path"] = image_path
 
         c.name = self.ed_name.text().strip()
 
-        animal_source = str(self.cb_animal_source.currentData() or "")
-        animal_type = str(self.cb_animal_type.currentData() or "")
-        animal = str(self.cb_animal.currentData() or "")
+        animal_source = combo_value(self.cb_animal_source)
+        animal_type = combo_value(self.cb_animal_type)
+        animal = combo_value(self.cb_animal)
 
         c.animal = animal
-
         c.bio_e["animal_source"] = animal_source
         c.bio_e["animal_type"] = animal_type
         c.bio_e["animal"] = animal
 
         c.bio_e["mutant_origin"] = {
-            "name": str(self.cb_mutant_origin.currentData() or ""),
+            "name": combo_value(self.cb_mutant_origin),
             "details": self.ed_mutant_origin_details.toPlainText().strip(),
         }
 
         c.bio_e["background_education"] = {
-            "name": str(self.cb_background_education.currentData() or ""),
+            "name": combo_value(self.cb_background_education),
             "details": self.ed_background_education_details.toPlainText().strip(),
         }
 
         c.bio_e["creator_organization"] = {
-            "name": str(self.cb_creator_organization.currentData() or ""),
+            "name": combo_value(self.cb_creator_organization),
             "details": self.ed_creator_organization_details.toPlainText().strip(),
-}
+        }
 
-        align = str(self.cb_alignment.currentData() or "")
-        c.alignment = align
+        c.alignment = combo_value(self.cb_alignment)
 
         c.age = self.ed_age.text().strip()
         c.gender = self.ed_gender.text().strip()
@@ -3403,11 +3931,11 @@ class MainWindow(QMainWindow):
         c.sdc = int(self.sp_sdc.value())
 
         try:
-            setattr(c, "weapons_selected", [str(cb.currentData() or "") for cb in self.weapon_combos])
-            setattr(c, "armor_type", str(self.cb_armor.currentData() or self.cb_armor.currentText() or ""))
-            setattr(c, "shield_type", str(self.cb_shield.currentData() or self.cb_shield.currentText() or ""))
+            setattr(c, "weapons_selected", [combo_value(cb) for cb in self.weapon_combos])
+            setattr(c, "armor_type", combo_value(self.cb_armor))
+            setattr(c, "shield_type", combo_value(self.cb_shield))
             setattr(c, "shield_notes", self.ed_shield_notes.text().strip())
-            setattr(c, "gear_selected", [str(cb.currentData() or cb.currentText() or "") for cb in self.gear_combos])
+            setattr(c, "gear_selected", [combo_value(cb) for cb in self.gear_combos])
         except Exception:
             pass
 
@@ -3423,7 +3951,7 @@ class MainWindow(QMainWindow):
         c.skills["pro"] = [self._selected_skill_name(cb) for cb in self.pro_skill_boxes]
         c.skills["amateur"] = [self._selected_skill_name(cb) for cb in self.amateur_skill_boxes]
 
-        c.combat["training"] = str(self.cb_combat_training.currentData() or "None")
+        c.combat["training"] = combo_value(self.cb_combat_training) or "None"
         c.combat["override"] = bool(self.chk_combat_override.isChecked())
         c.combat["auto_details"] = bool(self.chk_combat_auto_details.isChecked())
         c.combat["training_details_text"] = self.ed_combat_training_details.toPlainText()
@@ -3439,7 +3967,7 @@ class MainWindow(QMainWindow):
             combos: list[QComboBox] = section.get("combos", [])
             picked: list[str] = []
             for cb in combos:
-                name = str(cb.currentData() or "")
+                name = combo_value(cb)
                 if name:
                     picked.append(name)
             vehicles[key] = picked
@@ -3448,12 +3976,9 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-        
-
         c.bio_e["total"] = int(self.sp_bio_total.value())
         c.bio_e["spent"] = int(self.sp_bio_spent.value())
 
-        # Original animal characteristics (display-only, but saved for convenience)
         c.bio_e["original"] = {
             "size_level": self.ed_bio_orig_size_level.text().strip(),
             "length": self.ed_bio_orig_length.text().strip(),
@@ -3461,11 +3986,9 @@ class MainWindow(QMainWindow):
             "build": self.ed_bio_orig_build.text().strip(),
         }
 
-        # Mutant size selection
         c.bio_e["mutant_size_level"] = int(self.cb_bio_mutant_size_level.currentData() or 0)
         c.bio_e["mutant_size_label"] = self.cb_bio_mutant_size_level.currentText().strip()
 
-        # Human features
         c.bio_e["human_features"] = {
             "hands_cost": int(self.cb_human_hands.currentData() or 0),
             "biped_cost": int(self.cb_human_biped.currentData() or 0),
@@ -3477,7 +4000,6 @@ class MainWindow(QMainWindow):
             "looks_label": self.cb_human_looks.currentText().strip(),
         }
 
-        # Natural weapons
         nw: list[dict[str, Any]] = []
         for cb in getattr(self, "bio_weapon_combos", []):
             data = cb.currentData()
@@ -3485,7 +4007,6 @@ class MainWindow(QMainWindow):
                 nw.append({"name": str(data.get("name", "")), "cost": int(data.get("cost", 0) or 0)})
         c.bio_e["natural_weapons"] = nw
 
-        # Abilities
         ab: list[dict[str, Any]] = []
         for cb in getattr(self, "bio_ability_combos", []):
             data = cb.currentData()
@@ -3493,20 +4014,23 @@ class MainWindow(QMainWindow):
                 ab.append({"name": str(data.get("name", "")), "cost": int(data.get("cost", 0) or 0)})
         c.bio_e["abilities"] = ab
 
-        # Psionics
-        ps: list[dict[str, Any]] = []
-        for cb in getattr(self, "bio_psionic_combos", []):
-            label = cb.currentText()
-            cost = int(cb.currentData() or 0) if cb.isEnabled() else 0
-            if "None" not in label and cost > 0:
-                ps.append({"name": label.split(" (", 1)[0], "cost": cost})
-        c.bio_e["psionics"] = ps
+        mutant_animal_psionics = collect_catalog_entries("bio_mutant_animal_psionic_combos")
+        mutant_hominid_psionics = collect_catalog_entries("bio_mutant_hominid_psionic_combos")
+        mutant_prosthetic_psionics = collect_catalog_entries("bio_mutant_prosthetic_psionic_combos")
+        mutant_human_abilities = collect_catalog_entries("bio_mutant_human_ability_combos")
+        mutant_hominid_abilities = collect_catalog_entries("bio_mutant_hominid_ability_combos")
 
-        # Notes/traits
+        c.bio_e["mutant_animal_psionic_powers"] = mutant_animal_psionics
+        c.bio_e["mutant_hominid_psionic_powers"] = mutant_hominid_psionics
+        c.bio_e["mutant_prosthetic_psionic_powers"] = mutant_prosthetic_psionics
+        c.bio_e["mutant_human_abilities"] = mutant_human_abilities
+        c.bio_e["mutant_hominid_abilities"] = mutant_hominid_abilities
+
+        # Backward compatibility with old single psionics bucket
+        c.bio_e["psionics"] = list(mutant_animal_psionics)
+
         traits = [line.strip() for line in self.ed_traits.toPlainText().splitlines() if line.strip()]
         c.bio_e["traits"] = traits
-
-        image_path = getattr(c, "image_path", None) or getattr(c, "bio_e", {}).get("image_path")
 
         if image_path:
             pix = QPixmap(image_path)
@@ -3514,16 +4038,15 @@ class MainWindow(QMainWindow):
                 self.lbl_character_art.setPixmap(
                     pix.scaled(240, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 )
-                try:
-                    self.current_character.image_path = image_path
-                except Exception:
-                    pass
 
         return c
 
     def load_into_editor(self, c: Character, path: Optional[Path]) -> None:
         self.current_character = c
         self.current_path = path
+
+        image_path = getattr(c, "image_path", None) or getattr(c, "bio_e", {}).get("image_path") or ""
+        self.current_image_path = str(image_path).strip()
 
         self.ed_name.setText(c.name)
 
@@ -3538,7 +4061,7 @@ class MainWindow(QMainWindow):
         )
 
         animal = (
-            getattr(c, "animal", "") 
+            getattr(c, "animal", "")
             or getattr(c, "bio_e", {}).get("animal", "")
             or ""
         )
@@ -3574,29 +4097,31 @@ class MainWindow(QMainWindow):
         origin_data = getattr(c, "bio_e", {}).get("mutant_origin", {}) or {}
         origin_name = str(origin_data.get("name", "") or "")
         origin_details = str(origin_data.get("details", "") or "")
-
         idx = self.cb_mutant_origin.findData(origin_name)
+        if idx == -1 and origin_name:
+            idx = self.cb_mutant_origin.findText(origin_name)
         self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
         self.ed_mutant_origin_details.setPlainText(origin_details)
 
         education_data = getattr(c, "bio_e", {}).get("background_education", {}) or {}
         education_name = str(education_data.get("name", "") or "")
         education_details = str(education_data.get("details", "") or "")
-
         idx = self.cb_background_education.findData(education_name)
+        if idx == -1 and education_name:
+            idx = self.cb_background_education.findText(education_name)
         self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
         self.ed_background_education_details.setPlainText(education_details)
 
         creator_data = getattr(c, "bio_e", {}).get("creator_organization", {}) or {}
         creator_name = str(creator_data.get("name", "") or "")
         creator_details = str(creator_data.get("details", "") or "")
-
         idx = self.cb_creator_organization.findData(creator_name)
+        if idx == -1 and creator_name:
+            idx = self.cb_creator_organization.findText(creator_name)
         self.cb_creator_organization.setCurrentIndex(idx if idx != -1 else 0)
         self.ed_creator_organization_details.setPlainText(creator_details)
 
         self.update_creator_organization_enabled()
-
 
         self.ed_age.setText(getattr(c, "age", "") or "")
         self.ed_gender.setText(getattr(c, "gender", "") or "")
@@ -3620,7 +4145,7 @@ class MainWindow(QMainWindow):
         self.cb_size_level.setCurrentIndex(idx if idx != -1 else 0)
 
         idx = self.cb_size_build.findData(size_build)
-        self.cb_size_build.setCurrentIndex(idx if idx != -1 else 1)                                                     
+        self.cb_size_build.setCurrentIndex(idx if idx != -1 else 1)
 
         self.sp_total_credits.setValue(int(getattr(c, "total_credits", 0) or 0))
         self.ed_total_wealth.setText(str(getattr(c, "total_wealth", 0) or 0))
@@ -3632,21 +4157,29 @@ class MainWindow(QMainWindow):
 
         weapons_selected = getattr(c, "weapons_selected", []) or []
         for i, cb in enumerate(self.weapon_combos):
-            desired = str(weapons_selected[i]) if i < len(weapons_selected) else ""
+            desired = str(weapons_selected[i]).strip() if i < len(weapons_selected) else ""
             idx = cb.findData(desired)
+            if idx == -1 and desired:
+                idx = cb.findText(desired)
             cb.setCurrentIndex(idx if idx != -1 else 0)
             self.on_weapon_changed(i)
 
-        armor_type = str(getattr(c, "armor_type", "") or "")
+        armor_type = str(getattr(c, "armor_type", "") or "").strip()
         idx = self.cb_armor.findData(armor_type)
-        if idx == -1:
+        if idx == -1 and armor_type:
             idx = self.cb_armor.findText(armor_type)
         self.cb_armor.setCurrentIndex(idx if idx != -1 else 0)
 
+        self.ed_armor_name.setText(getattr(c, "armor_name", "") or "")
+        if armor_type and armor_type in ARMOR_BY_NAME:
+            self.on_armor_changed()
+        else:
+            self.sp_armor_ar.setValue(int(getattr(c, "armor_ar", 0) or 0))
+            self.sp_armor_sdc.setValue(int(getattr(c, "armor_sdc", 0) or 0))
 
-        shield_type = str(getattr(c, "shield_type", "") or "")
+        shield_type = str(getattr(c, "shield_type", "") or "").strip()
         idx = self.cb_shield.findData(shield_type)
-        if idx == -1:
+        if idx == -1 and shield_type:
             idx = self.cb_shield.findText(shield_type)
         self.cb_shield.setCurrentIndex(idx if idx != -1 else 0)
         self.ed_shield_notes.setText(str(getattr(c, "shield_notes", "") or ""))
@@ -3654,21 +4187,12 @@ class MainWindow(QMainWindow):
 
         gear_selected = getattr(c, "gear_selected", []) or []
         for i, cb in enumerate(self.gear_combos):
-            desired = str(gear_selected[i]) if i < len(gear_selected) else ""
+            desired = str(gear_selected[i]).strip() if i < len(gear_selected) else ""
             idx = cb.findData(desired)
-            if idx == -1:
+            if idx == -1 and desired:
                 idx = cb.findText(desired)
             cb.setCurrentIndex(idx if idx != -1 else 0)
             self.on_gear_changed(i)
-
-        self.ed_armor_name.setText(getattr(c, "armor_name", "") or "")
-
-        # If armor exists in catalog use catalog values
-        if armor_type and armor_type in ARMOR_BY_NAME:
-            self.on_armor_changed()
-        else:
-            self.sp_armor_ar.setValue(int(getattr(c, "armor_ar", 0) or 0))
-            self.sp_armor_sdc.setValue(int(getattr(c, "armor_sdc", 0) or 0))
 
         self.ed_notes.setPlainText(getattr(c, "notes", "") or "")
 
@@ -3683,15 +4207,21 @@ class MainWindow(QMainWindow):
         for i, cb in enumerate(self.pro_skill_boxes):
             desired = pro_list[i] or ""
             idx = cb.findData(desired, role=Qt.UserRole)
+            if idx == -1 and desired:
+                idx = cb.findText(desired)
             cb.setCurrentIndex(idx if idx != -1 else 0)
 
         for i, cb in enumerate(self.amateur_skill_boxes):
             desired = ama_list[i] or ""
             idx = cb.findData(desired, role=Qt.UserRole)
+            if idx == -1 and desired:
+                idx = cb.findText(desired)
             cb.setCurrentIndex(idx if idx != -1 else 0)
 
         training_name = str(getattr(c, "combat", {}).get("training", "None") or "None")
         idx = self.cb_combat_training.findData(training_name)
+        if idx == -1 and training_name:
+            idx = self.cb_combat_training.findText(training_name)
         self.cb_combat_training.setCurrentIndex(idx if idx != -1 else 0)
 
         auto_details = bool(getattr(c, "combat", {}).get("auto_details", True))
@@ -3709,7 +4239,9 @@ class MainWindow(QMainWindow):
             self.sp_actions.setValue(int(getattr(c, "combat", {}).get("actions_per_round", 2)))
 
         if not auto_details:
-            self.ed_combat_training_details.setPlainText(str(getattr(c, "combat", {}).get("training_details_text", "")))
+            self.ed_combat_training_details.setPlainText(
+                str(getattr(c, "combat", {}).get("training_details_text", ""))
+            )
 
         vehicles = getattr(c, "vehicles", {}) or {}
         for section_key in ("landcraft", "watercraft", "aircraft"):
@@ -3717,8 +4249,10 @@ class MainWindow(QMainWindow):
             section = self.vehicle_sections.get(section_key, {})
             combos: list[QComboBox] = section.get("combos", [])
             for i, cb in enumerate(combos):
-                desired = str(picked[i]) if i < len(picked) else ""
+                desired = str(picked[i]).strip() if i < len(picked) else ""
                 idx = cb.findData(desired)
+                if idx == -1 and desired:
+                    idx = cb.findText(desired)
                 cb.setCurrentIndex(idx if idx != -1 else 0)
                 self.on_vehicle_changed(section_key, i)
 
@@ -3732,12 +4266,8 @@ class MainWindow(QMainWindow):
             self.ed_bio_orig_weight.setText(str(original.get("weight", "") or ""))
             self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
 
-        
-
-        image_path = getattr(c, "image_path", None) or getattr(c, "bio_e", {}).get("image_path")
-
-        if image_path:
-            pix = QPixmap(image_path)
+        if self.current_image_path:
+            pix = QPixmap(self.current_image_path)
             if not pix.isNull():
                 self.lbl_character_art.setPixmap(
                     pix.scaled(240, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -3749,8 +4279,6 @@ class MainWindow(QMainWindow):
             self.lbl_character_art.clear()
             self.lbl_character_art.setText("No Image")
 
-
-        # Re-populate per-animal lists first
         self.on_bioe_animal_selected()
 
         mutant_size = int(getattr(c, "bio_e", {}).get("mutant_size_level", 0) or 0)
@@ -3775,7 +4303,6 @@ class MainWindow(QMainWindow):
                 idx = cb.findData(cost)
                 if idx == -1 and label:
                     idx = cb.findText(label)
-
                 cb.setCurrentIndex(idx if idx != -1 else 0)
 
         saved_nw = getattr(c, "bio_e", {}).get("natural_weapons", []) or []
@@ -3783,7 +4310,6 @@ class MainWindow(QMainWindow):
             for i, cb in enumerate(getattr(self, "bio_weapon_combos", [])):
                 desired = saved_nw[i].get("name") if i < len(saved_nw) and isinstance(saved_nw[i], dict) else ""
                 if desired:
-                    # find by text
                     idx = cb.findText(desired, Qt.MatchFixedString)
                     cb.setCurrentIndex(idx if idx != -1 else 0)
                 else:
@@ -3799,13 +4325,11 @@ class MainWindow(QMainWindow):
                 else:
                     cb.setCurrentIndex(0)
 
-        saved_ps = getattr(c, "bio_e", {}).get("psionics", []) or []
-        if isinstance(saved_ps, list):
-            # psionic combos store cost as data; match by power name prefix
-            for i, cb in enumerate(getattr(self, "bio_psionic_combos", [])):
-                desired = saved_ps[i].get("name") if i < len(saved_ps) and isinstance(saved_ps[i], dict) else ""
+        saved_animal_ps = getattr(c, "bio_e", {}).get("mutant_animal_psionic_powers", []) or getattr(c, "bio_e", {}).get("psionics", []) or []
+        if isinstance(saved_animal_ps, list):
+            for i, cb in enumerate(getattr(self, "bio_mutant_animal_psionic_combos", [])):
+                desired = saved_animal_ps[i].get("name") if i < len(saved_animal_ps) and isinstance(saved_animal_ps[i], dict) else ""
                 if desired and cb.isEnabled():
-                    # match by startswith
                     found = 0
                     for j in range(cb.count()):
                         if cb.itemText(j).startswith(desired):
@@ -3815,8 +4339,62 @@ class MainWindow(QMainWindow):
                 else:
                     cb.setCurrentIndex(0)
 
+        saved_hominid_ps = getattr(c, "bio_e", {}).get("mutant_hominid_psionic_powers", []) or []
+        if isinstance(saved_hominid_ps, list):
+            for i, cb in enumerate(getattr(self, "bio_mutant_hominid_psionic_combos", [])):
+                desired = saved_hominid_ps[i].get("name") if i < len(saved_hominid_ps) and isinstance(saved_hominid_ps[i], dict) else ""
+                if desired and cb.isEnabled():
+                    found = 0
+                    for j in range(cb.count()):
+                        if cb.itemText(j).startswith(desired):
+                            found = j
+                            break
+                    cb.setCurrentIndex(found)
+                else:
+                    cb.setCurrentIndex(0)
 
-        self.update_psionic_availability()
+        saved_prosthetic_ps = getattr(c, "bio_e", {}).get("mutant_prosthetic_psionic_powers", []) or []
+        if isinstance(saved_prosthetic_ps, list):
+            for i, cb in enumerate(getattr(self, "bio_mutant_prosthetic_psionic_combos", [])):
+                desired = saved_prosthetic_ps[i].get("name") if i < len(saved_prosthetic_ps) and isinstance(saved_prosthetic_ps[i], dict) else ""
+                if desired and cb.isEnabled():
+                    found = 0
+                    for j in range(cb.count()):
+                        if cb.itemText(j).startswith(desired):
+                            found = j
+                            break
+                    cb.setCurrentIndex(found)
+                else:
+                    cb.setCurrentIndex(0)
+
+        saved_human_ab = getattr(c, "bio_e", {}).get("mutant_human_abilities", []) or []
+        if isinstance(saved_human_ab, list):
+            for i, cb in enumerate(getattr(self, "bio_mutant_human_ability_combos", [])):
+                desired = saved_human_ab[i].get("name") if i < len(saved_human_ab) and isinstance(saved_human_ab[i], dict) else ""
+                if desired and cb.isEnabled():
+                    found = 0
+                    for j in range(cb.count()):
+                        if cb.itemText(j).startswith(desired):
+                            found = j
+                            break
+                    cb.setCurrentIndex(found)
+                else:
+                    cb.setCurrentIndex(0)
+
+        saved_hominid_ab = getattr(c, "bio_e", {}).get("mutant_hominid_abilities", []) or []
+        if isinstance(saved_hominid_ab, list):
+            for i, cb in enumerate(getattr(self, "bio_mutant_hominid_ability_combos", [])):
+                desired = saved_hominid_ab[i].get("name") if i < len(saved_hominid_ab) and isinstance(saved_hominid_ab[i], dict) else ""
+                if desired and cb.isEnabled():
+                    found = 0
+                    for j in range(cb.count()):
+                        if cb.itemText(j).startswith(desired):
+                            found = j
+                            break
+                    cb.setCurrentIndex(found)
+                else:
+                    cb.setCurrentIndex(0)
+
         self.recalc_bioe_spent()
         traits = getattr(c, "bio_e", {}).get("traits", []) or []
         self.ed_traits.setPlainText("\n".join(str(t) for t in traits))
@@ -3825,7 +4403,7 @@ class MainWindow(QMainWindow):
         self.recalc_combat_from_training()
         self.recalc_total_wealth()
         self.recalc_weight_breakdown()
-
+        self.sync_defense_summary_fields()
 
         if path:
             self.statusBar().showMessage(f"Loaded: {path.name}")

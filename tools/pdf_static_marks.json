@@ -1,0 +1,138 @@
+{
+  "circle": {},
+  "highlight": {
+    "animal control": [
+      { "page": 3, "x": 70, "y": 603, "width": 150, "height": 14, "opacity": 0.22 }
+    ],
+    "animal speech": [
+      { "page": 3, "x": 70, "y": 588, "width": 145, "height": 14, "opacity": 0.22 }
+    ],
+    "bio manipulation": [
+      { "page": 3, "x": 70, "y": 573, "width": 160, "height": 14, "opacity": 0.22 }
+    ],
+    "blind": [
+      { "page": 3, "x": 70, "y": 558, "width": 70, "height": 14, "opacity": 0.22 }
+    ],
+    "deafness": [
+      { "page": 3, "x": 70, "y": 543, "width": 95, "height": 14, "opacity": 0.22 }
+    ],
+    "mute": [
+      { "page": 3, "x": 70, "y": 528, "width": 65, "height": 14, "opacity": 0.22 }
+    ],
+    "paralysis": [
+      { "page": 3, "x": 70, "y": 513, "width": 100, "height": 14, "opacity": 0.22 }
+    ],
+    "stun": [
+      { "page": 3, "x": 70, "y": 498, "width": 65, "height": 14, "opacity": 0.22 }
+    ],
+    "tissue": [
+      { "page": 3, "x": 70, "y": 483, "width": 75, "height": 14, "opacity": 0.22 }
+    ],
+    "detect psionics": [
+      { "page": 3, "x": 70, "y": 468, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "hypnotic suggestion": [
+      { "page": 3, "x": 70, "y": 453, "width": 170, "height": 14, "opacity": 0.22 }
+    ],
+    "mind block": [
+      { "page": 3, "x": 70, "y": 438, "width": 105, "height": 14, "opacity": 0.22 }
+    ],
+    "mind trap": [
+      { "page": 3, "x": 70, "y": 423, "width": 95, "height": 14, "opacity": 0.22 }
+    ],
+    "see aura": [
+      { "page": 3, "x": 70, "y": 408, "width": 85, "height": 14, "opacity": 0.22 }
+    ],
+    "sixth sense": [
+      { "page": 3, "x": 70, "y": 393, "width": 105, "height": 14, "opacity": 0.22 }
+    ],
+    "telepathic transmission": [
+      { "page": 3, "x": 70, "y": 378, "width": 190, "height": 14, "opacity": 0.22 }
+    ],
+    "telepathy": [
+      { "page": 3, "x": 70, "y": 363, "width": 90, "height": 14, "opacity": 0.22 }
+    ],
+
+    "astral projection": [
+      { "page": 3, "x": 70, "y": 303, "width": 150, "height": 14, "opacity": 0.22 }
+    ],
+    "mental assault": [
+      { "page": 3, "x": 70, "y": 288, "width": 130, "height": 14, "opacity": 0.22 }
+    ],
+    "mind control": [
+      { "page": 3, "x": 70, "y": 273, "width": 115, "height": 14, "opacity": 0.22 }
+    ],
+
+    "ectoplasmic hands": [
+      { "page": 3, "x": 70, "y": 208, "width": 135, "height": 14, "opacity": 0.22 }
+    ],
+    "ext ectoplasmic hands": [
+      { "page": 3, "x": 70, "y": 223, "width": 170, "height": 14, "opacity": 0.22 }
+    ],
+    "psychic walk": [
+      { "page": 3, "x": 70, "y": 193, "width": 105, "height": 14, "opacity": 0.22 }
+    ],
+
+    "adhesion": [
+      { "page": 3, "x": 340, "y": 593, "width": 95, "height": 14, "opacity": 0.22 }
+    ],
+    "advanced taste": [
+      { "page": 3, "x": 340, "y": 578, "width": 130, "height": 14, "opacity": 0.22 }
+    ],
+    "advanced touch": [
+      { "page": 3, "x": 340, "y": 563, "width": 135, "height": 14, "opacity": 0.22 }
+    ],
+    "advanced vision": [
+      { "page": 3, "x": 340, "y": 548, "width": 135, "height": 14, "opacity": 0.22 }
+    ],
+    "create darkness": [
+      { "page": 3, "x": 340, "y": 533, "width": 145, "height": 14, "opacity": 0.22 }
+    ],
+    "create force field": [
+      { "page": 3, "x": 340, "y": 518, "width": 155, "height": 14, "opacity": 0.22 }
+    ],
+    "electrical field": [
+      { "page": 3, "x": 340, "y": 503, "width": 125, "height": 14, "opacity": 0.22 }
+    ],
+    "energy resistance": [
+      { "page": 3, "x": 340, "y": 488, "width": 145, "height": 14, "opacity": 0.22 }
+    ],
+    "mechanical manipulation": [
+      { "page": 3, "x": 340, "y": 473, "width": 175, "height": 14, "opacity": 0.22 }
+    ],
+    "shadow meld": [
+      { "page": 3, "x": 340, "y": 458, "width": 115, "height": 14, "opacity": 0.22 }
+    ],
+
+    "extraordinary i q": [
+      { "page": 3, "x": 340, "y": 322, "width": 135, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary m a": [
+      { "page": 3, "x": 340, "y": 307, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary m e": [
+      { "page": 3, "x": 340, "y": 292, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary p e": [
+      { "page": 3, "x": 340, "y": 277, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary p p": [
+      { "page": 3, "x": 340, "y": 262, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary p s": [
+      { "page": 3, "x": 340, "y": 247, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary p b": [
+      { "page": 3, "x": 340, "y": 232, "width": 140, "height": 14, "opacity": 0.22 }
+    ],
+    "extraordinary speed": [
+      { "page": 3, "x": 340, "y": 217, "width": 145, "height": 14, "opacity": 0.22 }
+    ],
+    "glide": [
+    { "page": 3, "x": 70, "y": 648, "width": 85, "height": 14, "opacity": 0.22 }
+    ],
+    "advanced vision": [
+    { "page": 3, "x": 340, "y": 548, "width": 135, "height": 14, "opacity": 0.22 }
+    ]
+  }
+}

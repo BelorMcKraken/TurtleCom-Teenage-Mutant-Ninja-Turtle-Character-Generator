@@ -122,7 +122,7 @@
     "animal_type": "Urban Animals",
     "animal": "Frog",
     "mutant_size_label": "6",
-    "image_path": "",
+    "image_path": "C:/Users/ianrw/Desktop/TurtleCom/TurtleCom-Teenage-Mutant-Ninja-Turtle-Character-Generator/ribbit.jpg",
     "mutant_origin": {
       "name": "Deliberate Experimentation",
       "details": "An organization performed some kind of laboratory experiment on the animal to cause the mutation. First roll on the Creator Organization table, then roll again on the Deliberate Experimentation outcome table."
@@ -138,5 +138,5 @@
   },
   "uid": "2026-03-09T20:16:08",
   "created_at": "2026-03-09T20:16:08",
-  "updated_at": "2026-03-15T13:17:33"
+  "updated_at": "2026-03-16T20:33:01"
 }

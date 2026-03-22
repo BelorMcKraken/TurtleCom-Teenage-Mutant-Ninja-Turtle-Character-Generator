@@ -1,0 +1,66 @@
+{
+  "mutant_animal_psionic_powers": [
+    { "name": "Animal Aura", "bio_e": 10 },
+    { "name": "Animal Control", "bio_e": 10 },
+    { "name": "Animal Speech", "bio_e": 5 },
+    { "name": "Astral Projection", "bio_e": 25 },
+    { "name": "Bio-Manipulation", "bio_e": 20 },
+    { "name": "Blind", "bio_e": 20 },
+    { "name": "Deafness", "bio_e": 20 },
+    { "name": "Mute", "bio_e": 20 },
+    { "name": "Paralysis", "bio_e": 20 },
+    { "name": "Stun", "bio_e": 20 },
+    { "name": "Tissue", "bio_e": 20 },
+    { "name": "Detect Psionics", "bio_e": 10 },
+    { "name": "Hypnotic Suggestion", "bio_e": 15 },
+    { "name": "Mental Assault", "bio_e": 30 },
+    { "name": "Mind Block", "bio_e": 15 },
+    { "name": "Mind Control", "bio_e": 25 },
+    { "name": "Mind Trap", "bio_e": 25 },
+    { "name": "See Aura", "bio_e": 15 },
+    { "name": "Sixth Sense", "bio_e": 10 },
+    { "name": "Techno Mind", "bio_e": 20 },
+    { "name": "Telepathic Transmission", "bio_e": 5 },
+    { "name": "Telepathy", "bio_e": 10 }
+  ],
+  "mutant_hominid_psionic_powers": [
+    { "name": "Detect Psionics", "bio_e": 10 },
+    { "name": "Hypnotic Suggestion", "bio_e": 20 },
+    { "name": "Mental Assault", "bio_e": 25 },
+    { "name": "Mind Block", "bio_e": 15 },
+    { "name": "Mind Control", "bio_e": 30 },
+    { "name": "See Aura", "bio_e": 15 },
+    { "name": "Techno Mind", "bio_e": 15 },
+    { "name": "Telepathic Transmission", "bio_e": 5 },
+    { "name": "Telepathy", "bio_e": 10 }
+  ],
+  "mutant_prosthetic_psionic_powers": [
+    { "name": "Ectoplasmic Hands", "bio_e": 10 },
+    { "name": "Ext. Ectoplasmic Hands", "bio_e": 10 },
+    { "name": "Psychic Walk", "bio_e": 5 }
+  ],
+  "mutant_human_abilities": [
+    { "name": "Adhesion", "bio_e": 15 },
+    { "name": "Advanced Taste", "bio_e": 5 },
+    { "name": "Advanced Touch", "bio_e": 5 },
+    { "name": "Advanced Vision", "bio_e": 5 },
+    { "name": "Create Darkness", "bio_e": 20 },
+    { "name": "Create Force Field", "bio_e": 30 },
+    { "name": "Electrical Field", "bio_e": 25 },
+    { "name": "Energy Resistance", "bio_e": 20 },
+    { "name": "Extraordinary I.Q.", "bio_e": 15 },
+    { "name": "Extraordinary M.E.", "bio_e": 15 },
+    { "name": "Mechanical Manipulation", "bio_e": 15 },
+    { "name": "Shadow Meld", "bio_e": 20 }
+  ],
+  "mutant_hominid_abilities": [
+    { "name": "Extraordinary I.Q.", "bio_e": 10 },
+    { "name": "Extraordinary M.A.", "bio_e": 10 },
+    { "name": "Extraordinary M.E.", "bio_e": 10 },
+    { "name": "Extraordinary P.E.", "bio_e": 15 },
+    { "name": "Extraordinary P.P.", "bio_e": 15 },
+    { "name": "Extraordinary P.S.", "bio_e": 10 },
+    { "name": "Extraordinary P.B.", "bio_e": 5 },
+    { "name": "Extraordinary Speed", "bio_e": 10 }
+  ]
+}
