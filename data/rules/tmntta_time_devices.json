@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Time Projector",
+    "category": "time_machine",
+    "portable": false,
+    "vehicle_mountable": false,
+    "base_cost": 3000000,
+    "recharge_time": "At least 4 hours for recharging and calibration. New destination or switching send/pick-up adds another half hour.",
+    "weight_lbs": null,
+    "max_area_of_effect": "2 yard/meter radius sphere",
+    "malfunction_text": "Operator must roll under Time Machine skill. Malfunction never sends wrong destination; fries circuits requiring 4D6 hours of repairs.",
+    "details": "Anchored in time and space. One-way only: sends out or retrieves from a target time and place."
+  },
+  {
+    "name": "Temporal Gate",
+    "category": "time_machine",
+    "portable": false,
+    "vehicle_mountable": false,
+    "base_cost": 5000000,
+    "recharge_time": "1 hour between portal openings. New destination calibration takes 15 minutes.",
+    "weight_lbs": null,
+    "max_area_of_effect": "4 yard/meter radius portal",
+    "malfunction_text": "Operator must roll under Time Machine skill. Malfunction never sends wrong destination; requires complete reset taking 2D6 hours.",
+    "details": "Two-way portal into another time. Portal remains open for 3D6 rounds."
+  },
+  {
+    "name": "Portable Time Machine",
+    "category": "time_machine",
+    "portable": true,
+    "vehicle_mountable": true,
+    "base_cost": 8000000,
+    "recharge_time": "20 minutes on high-voltage or running motor. Hand-cranked emergency generator takes 2D4 hours.",
+    "weight_lbs": 1800,
+    "max_area_of_effect": "8 yard/meter radius",
+    "malfunction_text": "Operator must roll under Time Machine skill. Malfunction means rolling on the Temporal Mishap table.",
+    "details": "Vehicle-suitable machine that travels across time and can access neighboring Twists."
+  },
+  {
+    "name": "Cross-Dimensional Gateway Generator",
+    "category": "dimension_device",
+    "portable": false,
+    "vehicle_mountable": false,
+    "base_cost": 2000000,
+    "recharge_time": "About 1 hour to recharge and calibrate for another dimensional locus.",
+    "weight_lbs": null,
+    "max_area_of_effect": "Up to 20 yards/meters wide and 12 yards/meters high",
+    "malfunction_text": "Operator must roll under Dimension Device skill. Failed roll percentile determines shutdown, wrong place, or massive cross-dimensional mislocation.",
+    "details": "Immobile mechanism that opens a portal to another dimension for as long as it is powered."
+  },
+  {
+    "name": "Portable Cross-Dimensional Device",
+    "category": "dimension_device",
+    "portable": true,
+    "vehicle_mountable": true,
+    "base_cost": 6000000,
+    "recharge_time": "About 1 hour to recharge and recalibrate.",
+    "weight_lbs": 900,
+    "max_area_of_effect": "12 yard/meter radius",
+    "malfunction_text": "Operator must roll under Dimension Device skill. Failed roll percentile determines self-only transport, shutdown, wrong place, or massive cross-dimensional mislocation.",
+    "details": "Moving dimensional travel device. Teleports itself and cargo to a cross-dimensional location."
+  },
+  {
+    "name": "Miniature Cross-Dimensional Device (Hopper)",
+    "category": "dimension_device",
+    "portable": true,
+    "vehicle_mountable": true,
+    "base_cost": 15000000,
+    "recharge_time": "15 minutes to recharge and recalibrate.",
+    "weight_lbs": 70,
+    "max_area_of_effect": "Up to 20 yard/meter radius",
+    "malfunction_text": "Operator must roll under Dimension Device skill. Failed roll percentile determines housing separation, shutdown, wrong place, or massive cross-dimensional mislocation.",
+    "details": "Smaller improved portable C-D device. Can be mounted in a vehicle, carried like a suitcase, or built into other equipment."
+  }
+]

@@ -16,7 +16,12 @@
       {"name": "Radio", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
       {"name": "Sensory Equipment", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
       {"name": "Surveillance", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
-      {"name": "TV/Video", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+      {"name": "TV/Video", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Greek (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Latin (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Norman French (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Portuguese (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Spanish (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
     ],
 
     "Domestic": [
@@ -55,7 +60,9 @@
       {"name": "Basic Mechanics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
       {"name": "Computer Repair", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
       {"name": "Locksmith", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
-      {"name": "Mechanical Engineer", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+      {"name": "Mechanical Engineer", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Blacksmithing (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Flintworking (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
     ],
 
     "Medical": [
@@ -91,7 +98,8 @@
       {"name": "Running", "base_pct": null, "per_level": 0, "attribute": "PE"},
       {"name": "Swimming", "base_pct": 40, "per_level": 0, "attribute": "PE"},
       {"name": "Advanced Swimming", "base_pct": 50, "per_level": 0, "attribute": "PE"},
-      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"}
+      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"},
+      {"name": "Equestrian (TA)", "base_pct": 50, "per_level": 0, "attribute": "PP"}
     ],
 
     "Piloting": [
@@ -112,7 +120,10 @@
       {"name": "Chemistry", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
       {"name": "Analytical Chemistry", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
       {"name": "Basic Mathematics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
-      {"name": "Advanced Mathematics", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+      {"name": "Advanced Mathematics", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Anthropology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Archaeology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Paleontology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
     ],
 
     "Technical": [
@@ -121,7 +132,13 @@
       {"name": "Computer Programming", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
       {"name": "Navigation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
       {"name": "Photography", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
-      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Modern (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Enlightenment (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Renaissance (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Medieval (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Classical (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Ancient (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
     ],
 
     "Weapon Proficiencies (Ancient)": [
@@ -132,7 +149,8 @@
       {"name": "WP Staff", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Spear", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Targeting (Ranged)", "base_pct": null, "per_level": 0, "attribute": "PP"},
-      {"name": "WP Paired (Weapon)", "base_pct": null, "per_level": 0, "attribute": "PP"}
+      {"name": "WP Paired (Weapon)", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Black Powder (TA)", "base_pct": null, "per_level": 0, "attribute": "PP"}
     ],
 
     "Weapon Proficiencies (Modern)": [
@@ -141,13 +159,31 @@
       {"name": "WP Shotgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Rifle", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Heavy", "base_pct": null, "per_level": 0, "attribute": "PP"}
+    ],
+
+    "Temporal (TA)": [
+      {"name": "Temporal Physics (TA)", "base_pct": 30, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Temporal Engineer (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Time Machine (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ", "restricted": true}
+    ],
+
+    "Dimensional (TA)": [
+      {"name": "Dimensional Physics (TA)", "base_pct": 30, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Dimensional Engineer (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Dimension Device (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ", "restricted": true}
     ]
+
   },
 
   "amateur": {
     "Communications": [
       {"name": "Language", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
-      {"name": "Radio", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
+      {"name": "Radio", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Greek (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Latin (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Norman French (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Portuguese (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "Language: Spanish (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
     ],
     "Domestic": [
       {"name": "Cook", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
@@ -169,7 +205,9 @@
     ],
     "Mechanical": [
       {"name": "Basic Mechanics", "base_pct": 30, "per_level": 0, "attribute": "IQ"},
-      {"name": "Auto Mechanics", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+      {"name": "Auto Mechanics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Blacksmithing (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Flintworking (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
     ],
     "Medical": [
       {"name": "First Aid", "base_pct": 30, "per_level": 0, "attribute": "IQ"}
@@ -187,7 +225,8 @@
       {"name": "Running", "base_pct": null, "per_level": 0, "attribute": "PE"},
       {"name": "Swimming", "base_pct": 40, "per_level": 0, "attribute": "PE"},
       {"name": "Advanced Swimming", "base_pct": 50, "per_level": 0, "attribute": "PE"},
-      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"}
+      {"name": "Wrestling", "base_pct": null, "per_level": 0, "attribute": "PS"},
+      {"name": "Equestrian (TA)", "base_pct": 50, "per_level": 0, "attribute": "PP"}
     ],
     "Piloting": [
       {"name": "Automobile", "base_pct": 60, "per_level": 0, "attribute": "IQ"},
@@ -199,25 +238,48 @@
       {"name": "Motor Boat", "base_pct": 60, "per_level": 0, "attribute": "IQ"}
     ],
     "Science": [
-      {"name": "Basic Mathematics", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+      {"name": "Basic Mathematics", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Anthropology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Archaeology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "Paleontology (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
     ],
     "Technical": [
       {"name": "Art", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
       {"name": "Computer Operation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
       {"name": "Navigation", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
       {"name": "Photography", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
-      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"}
+      {"name": "Writing", "base_pct": 40, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Modern (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Enlightenment (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Renaissance (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Medieval (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Classical (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"},
+      {"name": "History: Ancient (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ"}
     ],
     "Weapon Proficiencies (Ancient)": [
       {"name": "WP Blunt", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Knife", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Sword", "base_pct": null, "per_level": 0, "attribute": "PP"},
-      {"name": "WP Targeting (Ranged)", "base_pct": null, "per_level": 0, "attribute": "PP"}
+      {"name": "WP Targeting (Ranged)", "base_pct": null, "per_level": 0, "attribute": "PP"},
+      {"name": "WP Black Powder (TA)", "base_pct": null, "per_level": 0, "attribute": "PP"}
     ],
     "Weapon Proficiencies (Modern)": [
       {"name": "WP Handgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Shotgun", "base_pct": null, "per_level": 0, "attribute": "PP"},
       {"name": "WP Rifle", "base_pct": null, "per_level": 0, "attribute": "PP"}
-    ]
+    ],
+
+        "Temporal (TA)": [
+      {"name": "Temporal Physics (TA)", "base_pct": 30, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Temporal Engineer (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Time Machine (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ", "restricted": true}
+    ],
+
+    "Dimensional (TA)": [
+      {"name": "Dimensional Physics (TA)", "base_pct": 30, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Dimensional Engineer (TA)", "base_pct": 40, "per_level": 0, "attribute": "IQ", "restricted": true},
+      {"name": "Dimension Device (TA)", "base_pct": 50, "per_level": 0, "attribute": "IQ", "restricted": true}
+    ]  
+
   }
 }

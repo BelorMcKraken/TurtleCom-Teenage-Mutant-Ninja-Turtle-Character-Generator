@@ -1,3 +1,5 @@
+// tools/fill_pdf_form.mjs
+
 import fs from "fs";
 import path from "path";
 import {
@@ -13,15 +15,23 @@ const [, , templatePath, outputPath, dataPath, ...flags] = process.argv;
 const flatten = flags.includes("--flatten");
 const debugGrid = flags.includes("--debug-grid");
 
+if (!templatePath || !outputPath || !dataPath) {
+  throw new Error(
+    "Usage: node fill_pdf_form.mjs <template.pdf> <output.pdf> <data.json> [--flatten] [--debug-grid]"
+  );
+}
+
 const templateBytes = fs.readFileSync(templatePath);
 const pdfDoc = await PDFDocument.load(templateBytes);
 const form = pdfDoc.getForm();
 const data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
-const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-const scriptDir = path.dirname(new URL(import.meta.url).pathname);
+const scriptFile = new URL(import.meta.url);
+const scriptDir = path.dirname(scriptFile.pathname);
+const projectDir = path.resolve(scriptDir, "..");
 const staticMarksPath = path.join(scriptDir, "pdf_static_marks.json");
 
+const font = await embedPreferredFont(pdfDoc, projectDir);
 const placeholderValues = new Set(["Sample", "Sample Text", "Sample text", "Text"]);
 
 function normalize(value) {
@@ -40,6 +50,27 @@ function normalize(value) {
     .replace(/\bpb\b/g, "p b")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+async function embedPreferredFont(doc, rootDir) {
+  const fontCandidates = [
+    path.join(rootDir, "assets", "fonts", "NotoSans-Regular.ttf"),
+    path.join(rootDir, "assets", "fonts", "NotoSerif-Regular.ttf"),
+    path.join(rootDir, "assets", "fonts", "LiberationSans-Regular.ttf"),
+  ];
+
+  for (const candidate of fontCandidates) {
+    try {
+      if (fs.existsSync(candidate)) {
+        const bytes = fs.readFileSync(candidate);
+        return await doc.embedFont(bytes);
+      }
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  return await doc.embedFont(StandardFonts.Helvetica);
 }
 
 function fieldNameCandidates(name) {
@@ -65,7 +96,7 @@ function fieldNameCandidates(name) {
     "create darkness": ["darkness"],
     "electrical field": ["electric field"],
     "mechanical manipulation": ["mechanical"],
-    "shadow meld": ["shadow"]
+    "shadow meld": ["shadow"],
   };
 
   if (aliases[n]) {
@@ -141,7 +172,7 @@ function trySelectButtonField(field) {
         return true;
       }
     }
-  } catch (e) {
+  } catch (_error) {
     return false;
   }
 
@@ -174,12 +205,13 @@ function loadStaticMarks() {
     if (!fs.existsSync(staticMarksPath)) {
       return { circle: {}, highlight: {} };
     }
+
     const raw = JSON.parse(fs.readFileSync(staticMarksPath, "utf-8"));
     return {
       circle: raw.circle ?? {},
       highlight: raw.highlight ?? {},
     };
-  } catch (e) {
+  } catch (_error) {
     return { circle: {}, highlight: {} };
   }
 }
@@ -221,7 +253,7 @@ function drawHighlight(page, entry) {
   });
 }
 
-function applyStaticMarks(payload, pdfDoc) {
+function applyStaticMarks(payload, doc) {
   const selectedLabels = extractSelectedLabels(payload);
   const marks = loadStaticMarks();
   const seen = new Set();
@@ -238,24 +270,24 @@ function applyStaticMarks(payload, pdfDoc) {
 
       for (const entry of circleEntries) {
         const pageIndex = Number(entry.page ?? 1) - 1;
-        if (pageIndex >= 0 && pageIndex < pdfDoc.getPageCount()) {
-          drawCircle(pdfDoc.getPage(pageIndex), entry);
+        if (pageIndex >= 0 && pageIndex < doc.getPageCount()) {
+          drawCircle(doc.getPage(pageIndex), entry);
         }
       }
 
       for (const entry of highlightEntries) {
         const pageIndex = Number(entry.page ?? 1) - 1;
-        if (pageIndex >= 0 && pageIndex < pdfDoc.getPageCount()) {
-          drawHighlight(pdfDoc.getPage(pageIndex), entry);
+        if (pageIndex >= 0 && pageIndex < doc.getPageCount()) {
+          drawHighlight(doc.getPage(pageIndex), entry);
         }
       }
     }
   }
 }
 
-function drawDebugGrid(pdfDoc) {
-  for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-    const page = pdfDoc.getPage(i);
+function drawDebugGrid(doc) {
+  for (let i = 0; i < doc.getPageCount(); i += 1) {
+    const page = doc.getPage(i);
     const { width, height } = page.getSize();
 
     for (let x = 0; x <= width; x += 50) {
@@ -306,6 +338,74 @@ function drawDebugGrid(pdfDoc) {
   }
 }
 
+function bestFontSize(fieldName, value) {
+  const text = String(value ?? "");
+  const n = text.length;
+  const normalized = normalize(fieldName);
+
+  if (normalized.includes("notes") || normalized.includes("details")) {
+    return n > 180 ? 7 : n > 100 ? 8 : 9;
+  }
+
+  if (normalized.includes("damage") || normalized.includes("range") || normalized.includes("pct")) {
+    return n > 14 ? 8 : 10;
+  }
+
+  if (n > 80) return 8;
+  if (n > 40) return 9;
+  if (n > 20) return 10;
+  return 11;
+}
+
+// tools/fill_pdf_form.mjs
+
+function candidateDataKeys(fieldName) {
+  const out = new Set([fieldName]);
+
+  if (fieldName.includes(".Pct.")) {
+    out.add(fieldName.replace(".Pct.", ".Percent."));
+    out.add(fieldName.replace(".Pct.", ".PctValue."));
+  }
+
+  if (fieldName.includes(".Percent.")) {
+    out.add(fieldName.replace(".Percent.", ".Pct."));
+  }
+
+  if (fieldName.includes("W.Damage.")) {
+    out.add(fieldName.replace("W.Damage.", "Weapon.Damage."));
+  }
+
+  if (fieldName.includes("Weapon.Damage.")) {
+    out.add(fieldName.replace("Weapon.Damage.", "W.Damage."));
+  }
+
+  if (fieldName.includes("W.Range.")) {
+    out.add(fieldName.replace("W.Range.", "Weapon.Range."));
+  }
+
+  if (fieldName.includes("Weapon.Range.")) {
+    out.add(fieldName.replace("Weapon.Range.", "W.Range."));
+  }
+
+  if (fieldName.includes("W.Notes.")) {
+    out.add(fieldName.replace("W.Notes.", "Weapon.Notes."));
+  }
+
+  if (fieldName.includes("Weapon.Notes.")) {
+    out.add(fieldName.replace("Weapon.Notes.", "W.Notes."));
+  }
+
+  if (fieldName.includes("Type.Weapon.")) {
+    out.add(fieldName.replace("Type.Weapon.", "Weapon.Type."));
+  }
+
+  if (fieldName.includes("Weapon.Type.")) {
+    out.add(fieldName.replace("Weapon.Type.", "Type.Weapon."));
+  }
+
+  return [...out];
+}
+
 const fields = form.getFields();
 
 for (const field of fields) {
@@ -313,36 +413,51 @@ for (const field of fields) {
     if (field instanceof PDFTextField && field.isRichFormatted()) {
       field.disableRichFormatting();
     }
-  } catch (e) {
+  } catch (_error) {
     // ignore
   }
 }
 
 for (const field of fields) {
   try {
-    if (field instanceof PDFTextField) {
-      const name = field.getName();
+    if (!(field instanceof PDFTextField)) {
+      continue;
+    }
 
-      if (!name.startsWith("__") && Object.prototype.hasOwnProperty.call(data, name)) {
-        field.setText(String(data[name] ?? ""));
-      } else {
+    const name = field.getName();
+    let matched = false;
+
+    for (const key of candidateDataKeys(name)) {
+      if (!key.startsWith("__") && Object.prototype.hasOwnProperty.call(data, key)) {
+        const value = String(data[key] ?? "");
+        field.setText(value);
         try {
-          const current = field.getText();
-          if (placeholderValues.has(String(current ?? "").trim())) {
-            field.setText("");
-          }
-        } catch (e) {
+          field.setFontSize(bestFontSize(name, value));
+        } catch (_error) {
           // ignore
         }
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      try {
+        const current = field.getText();
+        if (placeholderValues.has(String(current ?? "").trim())) {
+          field.setText("");
+        }
+      } catch (_error) {
+        // ignore
       }
 
       try {
-        field.setFontSize(12);
-      } catch (e) {
+        field.setFontSize(10);
+      } catch (_error) {
         // ignore
       }
     }
-  } catch (e) {
+  } catch (_error) {
     // ignore
   }
 }
@@ -351,7 +466,7 @@ markMatchingButtonFields(data, fields);
 
 try {
   form.updateFieldAppearances(font);
-} catch (e) {
+} catch (_error) {
   // ignore
 }
 

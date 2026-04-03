@@ -1108,6 +1108,20 @@
   ]
 },
 
+"SHEEP": {
+  "bio_e": 60,
+  "original": {"size_level": 6, "length_in": 60, "weight_lbs": 75, "build": "Medium"},
+  "mutant_changes_text": "This domesticaded animal has beem nred for meat and wool",
+  "attribute_bonuses": {"Spd": 4},
+  "natural_weapons": [
+    {"name": "Horns(1D8)", "cost": 5, "details": "Bite: 1D8"}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Hear better."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced smell."}
+  ]
+},
+
 "SKUNK (Striped)": {
   "bio_e": 70,
   "original": {"size_level": 3, "length_in": 32, "weight_lbs": 8, "build": "Short"},
@@ -1246,6 +1260,414 @@
     {"name": "Digging", "cost": 10, "details": "Digging ability."},
     {"name": "Advanced Smell", "cost": 10, "details": "Enhanced smell."}
   ]
+},
+
+
+"ALLOSAUROID": {
+  "bio_e": 0,
+  "original": {"size_level": 20, "length_in": 240, "weight_lbs": 2000, "build": "Medium"},
+  "mutant_changes_text": "Large predatory dinosaur with massive jaws, long arms, and powerful claws.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite attack."},
+    {"name": "Claws (1D8)", "cost": 5, "details": "Hand claws."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced scent tracking."},
+    {"name": "Thick Skin", "cost": 5, "details": "+20 S.D.C."},
+    {"name": "Light Natural Armor", "cost": 15, "details": "A.R. 7, +30 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 30, "details": "A.R. 10, +60 S.D.C."}
+  ]
+},
+
+"ANKYLOSAUROID": {
+  "bio_e": 0,
+  "original": {"size_level": 21, "length_in": 240, "weight_lbs": 4000, "build": "Medium"},
+  "mutant_changes_text": "Heavily armored herbivore with bone plating, horns, and a powerful tail club.",
+  "attribute_bonuses": {"PE": 7},
+  "natural_weapons": [
+    {"name": "Beak (1D6)", "cost": 5, "details": "Biting beak."},
+    {"name": "Head Horns (1D8)", "cost": 5, "details": "Butting attack."},
+    {"name": "Bone Forehead (1D6)", "cost": 5, "details": "Headbutt + natural helmet (A.R. 14)."},
+    {"name": "Tail Club (1D8)", "cost": 10, "details": "Extra melee attack."},
+    {"name": "Heavy Tail Club (2D10)", "cost": 15, "details": "Stronger tail attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Enhanced scent."},
+    {"name": "Light Natural Armor", "cost": 15, "details": "A.R. 8, +40 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 30, "details": "A.R. 12, +60 S.D.C."},
+    {"name": "Heavy Natural Armor", "cost": 45, "details": "A.R. 15, +75 S.D.C."},
+    {"name": "Extra Heavy Armor", "cost": 60, "details": "A.R. 17, +120 S.D.C."}
+  ]
+},
+
+"BRONTOSAUROID": {
+  "bio_e": 0,
+  "original": {"size_level": 25, "length_in": 960, "weight_lbs": 75000, "build": "Medium"},
+  "mutant_changes_text": "Massive long-neck herbivore adapted for reaching high vegetation.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Hand Claw (1D8)", "cost": 5, "details": "Basic claw attack."},
+    {"name": "Whip Tail (1D10)", "cost": 5, "details": "Extra attack per melee."}
+  ],
+  "abilities": [
+    {"name": "Thick Skin", "cost": 5, "details": "+20 S.D.C."},
+    {"name": "Light Natural Armor", "cost": 10, "details": "A.R. 6, +30 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 20, "details": "A.R. 9, +60 S.D.C."}
+  ]
+},
+
+"DROMAEOSAUROID": {
+  "bio_e": 35,
+  "original": {"size_level": 8, "length_in": 96, "weight_lbs": 150, "build": "Medium"},
+  "mutant_changes_text": "Fast, pack-hunting predator with deadly claw attacks and high agility.",
+  "attribute_bonuses": {"IQ": 2, "MA": 1, "PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Bite attack."},
+    {"name": "Claws (1D8)", "cost": 5, "details": "Basic claws."},
+    {"name": "Claws (2D6)", "cost": 10, "details": "Improved claws."},
+    {"name": "Scythe Claw (2D10)", "cost": 10, "details": "Toe-mounted killing claw."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Leaping", "cost": 5, "details": "Double jump distance."},
+    {"name": "Stiffened Tail", "cost": 5, "details": "+combat bonuses and agility."},
+    {"name": "Heightened Speed", "cost": 10, "details": "Up to 45 mph bursts."}
+  ]
+},
+
+"DUCKOID": {
+  "bio_e": 0,
+  "original": {"size_level": 21, "length_in": 420, "weight_lbs": 5000, "build": "Medium"},
+  "mutant_changes_text": "Duck-billed dinosaur with herd instincts and strong survival traits.",
+  "attribute_bonuses": {"MA": 1},
+  "natural_weapons": [],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Sensitive hearing."},
+    {"name": "Hold Breath", "cost": 0, "details": "Extended breath holding."},
+    {"name": "Light Natural Armor", "cost": 10, "details": "A.R. 6, +20 S.D.C."}
+  ]
+},
+
+"HYPSILOPHOID": {
+  "bio_e": 30,
+  "original": {"size_level": 9, "length_in": 84, "weight_lbs": 175, "build": "Medium"},
+  "mutant_changes_text": "Small, fast herbivore adapted for speed and agility.",
+  "attribute_bonuses": {"Spd": 6},
+  "natural_weapons": [
+    {"name": "Beak (1D4)", "cost": 5, "details": "Pecking attack."},
+    {"name": "Claws (1D4)", "cost": 5, "details": "Hand claws."},
+    {"name": "Foot Claws (1D8)", "cost": 5, "details": "Kick attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Alertness."},
+    {"name": "Stiffened Tail", "cost": 5, "details": "Combat agility bonuses."},
+    {"name": "Heightened Speed", "cost": 10, "details": "High-speed movement."},
+    {"name": "Light Natural Armor", "cost": 15, "details": "A.R. 8, +20 S.D.C."}
+  ]
+},
+
+"PACHYCEPHALOID": {
+  "bio_e": 0,
+  "original": {"size_level": 17, "length_in": 312, "weight_lbs": 800, "build": "Medium"},
+  "mutant_changes_text": "Thick-skulled dinosaur built for headbutting and impact combat.",
+  "attribute_bonuses": {"PS": 1, "PE": 3, "Spd": 1},
+  "natural_weapons": [
+    {"name": "Claws (1D6)", "cost": 5, "details": "Basic claw attack."},
+    {"name": "Headbutt (1D6)", "cost": 5, "details": "Thick skull strike."},
+    {"name": "Ram Attack (3D6)", "cost": 10, "details": "Full-body charge attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Light Natural Armor", "cost": 15, "details": "A.R. 6, +20 S.D.C."}
+  ]
+},
+
+"PTERASOID": {
+  "bio_e": 55,
+  "original": {"size_level": 5, "length_in": 300, "weight_lbs": 40, "build": "Medium"},
+  "mutant_changes_text": "Flying reptile adapted for gliding and aerial hunting.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Beak (1D8)", "cost": 5, "details": "Piercing attack."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Vision", "cost": 5, "details": "Sharp eyesight."},
+    {"name": "Glide", "cost": 10, "details": "Controlled descent."}
+  ]
+},
+
+"STEGOSAUROID": {
+  "bio_e": 0,
+  "original": {"size_level": 22, "length_in": 240, "weight_lbs": 6000, "build": "Medium"},
+  "mutant_changes_text": "Armored herbivore with back plates and spiked tail.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Beak (1D4)", "cost": 5, "details": "Biting beak."},
+    {"name": "Tail Spike (1D8)", "cost": 10, "details": "Extra attack."},
+    {"name": "Heavy Tail Spike (3D6)", "cost": 15, "details": "Powerful tail strike."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Scent tracking."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Temperature Control", "cost": 10, "details": "Heat regulation plates."},
+    {"name": "Light Natural Armor", "cost": 15, "details": "A.R. 9, +30 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 30, "details": "A.R. 12, +45 S.D.C."},
+    {"name": "Heavy Natural Armor", "cost": 45, "details": "A.R. 14, +60 S.D.C."}
+  ]
+},
+
+"SAURINOID": {
+  "bio_e": 25,
+  "original": {"size_level": 9, "length_in": 84, "weight_lbs": 175, "build": "Medium"},
+  "mutant_changes_text": "Highly intelligent, agile dinosaur with humanoid traits.",
+  "attribute_bonuses": {"IQ": 2, "ME": 1, "MA": 1, "PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Hand Claws (1D6)", "cost": 5, "details": "Basic claws."},
+    {"name": "Foot Claws (1D8)", "cost": 5, "details": "Kick attack."},
+    {"name": "Scythe Claw (2D6)", "cost": 10, "details": "Toe-mounted weapon."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness."},
+    {"name": "Stiffened Tail", "cost": 5, "details": "Combat agility bonuses."},
+    {"name": "Heightened Speed", "cost": 10, "details": "Fast movement."}
+  ]
+},
+
+"RAPTOROID": {
+  "bio_e": 45,
+  "original": {"size_level": 8, "length_in": 96, "weight_lbs": 150, "build": "Medium"},
+  "mutant_changes_text": "Pack-hunting dinosaur similar to velociraptors; agile, intelligent, and fast.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PP": 2, "Spd": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Basic claws."},
+    {"name": "Claws + Scythe Claw (1D12)", "cost": 10, "details": "Toe-mounted killing claw."},
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Bite attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced awareness."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Keen eyesight."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness."},
+    {"name": "Quick Run", "cost": 10, "details": "Burst speed movement."},
+    {"name": "Leaping", "cost": 5, "details": "Double jump distance."},
+    {"name": "Thick Skin", "cost": 5, "details": "+20 S.D.C."}
+  ]
+},
+
+"TRICERATOID": {
+  "bio_e": 0,
+  "original": {"size_level": 23, "length_in": 420, "weight_lbs": 15000, "build": "Short"},
+  "mutant_changes_text": "Massive horned herbivore with heavy skull armor and defensive combat traits.",
+  "attribute_bonuses": {"MA": 2, "PS": 2, "PE": 2},
+  "natural_weapons": [
+    {"name": "Hooked Beak (1D8)", "cost": 5, "details": "Beak attack."},
+    {"name": "Nose Horn (1D6)", "cost": 0, "details": "Short horn attack."},
+    {"name": "Forehead Horns (1D10)", "cost": 5, "details": "Primary horns."},
+    {"name": "Large Horns + Neck Shield (1D12)", "cost": 10, "details": "Headbutt damage; +20 S.D.C."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Light Natural Armor", "cost": 10, "details": "A.R. 8, +20 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 20, "details": "A.R. 10, +40 S.D.C."},
+    {"name": "Heavy Natural Armor", "cost": 30, "details": "A.R. 12, +60 S.D.C."},
+    {"name": "Tough Natural Armor", "cost": 40, "details": "A.R. 14, +80 S.D.C."}
+  ]
+},
+
+"TYRANNOSAUR": {
+  "bio_e": 0,
+  "original": {"size_level": 23, "length_in": 540, "weight_lbs": 20000, "build": "Medium"},
+  "mutant_changes_text": "Apex predator with massive jaws and powerful bite force.",
+  "attribute_bonuses": {"ME": 1, "PS": 4, "PP": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Small forearm claws."},
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Standard bite."},
+    {"name": "Massive Bite (1D12+6)", "cost": 10, "details": "Crushing bite attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Keen eyesight."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness."},
+    {"name": "Light Natural Armor", "cost": 5, "details": "A.R. 7, +30 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 15, "details": "A.R. 9, +60 S.D.C."}
+  ]
+},
+
+"ARGENTAVIDON": {
+  "bio_e": 40,
+  "original": {"size_level": 11, "length_in": 300, "weight_lbs": 150, "build": "Medium"},
+  "mutant_changes_text": "Giant prehistoric vulture-like bird adapted for flight and scavenging.",
+  "attribute_bonuses": {"PS": 2, "PP": 2, "PE": 2},
+  "natural_weapons": [
+    {"name": "Talons (1D8)", "cost": 5, "details": "Grasping claws."},
+    {"name": "Beak (1D8)", "cost": 5, "details": "Piercing attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Advanced Vision", "cost": 5, "details": "Sharp eyesight."},
+    {"name": "Ultraviolet Vision", "cost": 10, "details": "Enhanced sight spectrum."},
+    {"name": "Glide", "cost": 10, "details": "Soaring flight."},
+    {"name": "Flight", "cost": 20, "details": "True powered flight."}
+  ]
+},
+
+"DIATRYMON": {
+  "bio_e": 40,
+  "original": {"size_level": 11, "length_in": 84, "weight_lbs": 250, "build": "Medium"},
+  "mutant_changes_text": "Large flightless predator bird known for speed and strong attacks.",
+  "attribute_bonuses": {"PS": 2, "PP": 2, "Spd": 6},
+  "natural_weapons": [
+    {"name": "Talons (1D6)", "cost": 5, "details": "Claw attack."},
+    {"name": "Beak (1D6)", "cost": 5, "details": "Pecking attack."},
+    {"name": "Heavy Beak (1D10)", "cost": 10, "details": "Stronger bite."}
+  ],
+  "abilities": [
+    {"name": "Advanced Vision", "cost": 5, "details": "Keen eyesight."},
+    {"name": "Quick Run", "cost": 10, "details": "Burst sprint ability."}
+  ]
+},
+
+"GLYPTODON": {
+  "bio_e": 0,
+  "original": {"size_level": 19, "length_in": 120, "weight_lbs": 1400, "build": "Short"},
+  "mutant_changes_text": "Armored mammal resembling a giant turtle with a clubbed tail.",
+  "attribute_bonuses": {"MA": 1, "PS": 4, "PE": 4},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Digging claws."},
+    {"name": "Tail Club (1D6)", "cost": 5, "details": "Tail strike."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Digging", "cost": 10, "details": "Burrowing ability."},
+    {"name": "Light Natural Armor", "cost": 5, "details": "A.R. 8, +20 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 15, "details": "A.R. 10, +40 S.D.C."},
+    {"name": "Heavy Natural Armor", "cost": 25, "details": "A.R. 12, +60 S.D.C."},
+    {"name": "Tough Natural Armor", "cost": 35, "details": "A.R. 14, +80 S.D.C."}
+  ]
+},
+
+"HYENODON": {
+  "bio_e": 10,
+  "original": {"size_level": 17, "length_in": 120, "weight_lbs": 800, "build": "Medium"},
+  "mutant_changes_text": "Large prehistoric predator similar to hyenas, known for pack hunting.",
+  "attribute_bonuses": {"MA": 1, "PS": 2, "PP": 2, "PE": 2},
+  "natural_weapons": [],
+  "abilities": []
+},
+
+"MASTODON / WOOLLY MAMMOTH": {
+  "bio_e": 0,
+  "original": {"size_level": 22, "length_in": 156, "weight_lbs": 10000, "build": "Short"},
+  "mutant_changes_text": "Large elephant-like mammal adapted for cold climates.",
+  "attribute_bonuses": {"IQ": 2, "MA": 2, "PS": 2},
+  "natural_weapons": [
+    {"name": "Tusks (1D8)", "cost": 5, "details": "Basic tusk attack."},
+    {"name": "Heavy Tusks (1D12)", "cost": 10, "details": "Stronger tusk attack."}
+  ],
+  "abilities": [
+    {"name": "Prehensile Trunk", "cost": 5, "details": "Extra limb functionality."},
+    {"name": "Advanced Hearing", "cost": 10, "details": "Enhanced hearing."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Thick Skin", "cost": 5, "details": "+20 S.D.C."},
+    {"name": "Woolly Coat", "cost": 5, "details": "Cold resistance."}
+  ]
+},
+
+"MEGATHERION": {
+  "bio_e": 0,
+  "original": {"size_level": 21, "length_in": 240, "weight_lbs": 4000, "build": "Medium"},
+  "mutant_changes_text": "Massive prehistoric sloth with powerful climbing claws.",
+  "attribute_bonuses": {"ME": 2, "PS": 2, "PE": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D6)", "cost": 5, "details": "Climbing claws."},
+    {"name": "Heavy Claws (1D10)", "cost": 10, "details": "Stronger claw attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Digging", "cost": 10, "details": "Excavation ability."},
+    {"name": "Thick Skin", "cost": 5, "details": "+20 S.D.C."}
+  ]
+},
+
+"PARACERATHERION": {
+  "bio_e": 0,
+  "original": {"size_level": 24, "length_in": 480, "weight_lbs": 40000, "build": "Long"},
+  "mutant_changes_text": "Enormous hornless rhino-like mammal, one of the largest land mammals ever.",
+  "attribute_bonuses": {},
+  "natural_weapons": [
+    {"name": "Tusks (1D8)", "cost": 5, "details": "Basic tusk attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Light Natural Armor", "cost": 10, "details": "A.R. 8, +20 S.D.C."},
+    {"name": "Medium Natural Armor", "cost": 20, "details": "A.R. 10, +40 S.D.C."},
+    {"name": "Heavy Natural Armor", "cost": 30, "details": "A.R. 12, +60 S.D.C."},
+    {"name": "Tough Natural Armor", "cost": 40, "details": "A.R. 14, +80 S.D.C."}
+  ]
+},
+
+"SMILODON": {
+  "bio_e": 5,
+  "original": {"size_level": 17, "length_in": 120, "weight_lbs": 800, "build": "Long"},
+  "mutant_changes_text": "Saber-toothed predator known for powerful jaws and ambush tactics.",
+  "attribute_bonuses": {"ME": 2, "PS": 6, "PP": 2, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Retractable Claws (1D10)", "cost": 10, "details": "Claw attack."},
+    {"name": "Teeth (1D8)", "cost": 5, "details": "Bite attack."},
+    {"name": "Saber Teeth (1D12+2)", "cost": 10, "details": "Heavy bite attack."}
+  ],
+  "abilities": [
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Nightvision", "cost": 10, "details": "See in darkness."}
+  ]
+},
+
+"THYLODON": {
+  "bio_e": 20,
+  "original": {"size_level": 13, "length_in": 72, "weight_lbs": 350, "build": "Long"},
+  "mutant_changes_text": "Marsupial ambush predator with powerful jaws and climbing ability.",
+  "attribute_bonuses": {"ME": 1, "PS": 5, "PP": 1, "PE": 1, "Spd": 2},
+  "natural_weapons": [
+    {"name": "Claws (1D8)", "cost": 5, "details": "Climbing claws."},
+    {"name": "Teeth (1D10)", "cost": 5, "details": "Bite attack."},
+    {"name": "Heavy Teeth (1D12+4)", "cost": 10, "details": "Powerful bite."}
+  ],
+  "abilities": [
+    {"name": "Advanced Hearing", "cost": 5, "details": "Awareness."},
+    {"name": "Advanced Smell", "cost": 5, "details": "Tracking scent."},
+    {"name": "Nightvision", "cost": 5, "details": "See in darkness."},
+    {"name": "Leaping", "cost": 5, "details": "Double jump distance."},
+    {"name": "Natural Climber", "cost": 5, "details": "Climbing specialization."}
+  ]
+},
+
+"HOMINID": {
+  "bio_e": 0,
+  "original": {
+    "size_level": 10,
+    "length_in": 72,
+    "weight_lbs": 180,
+    "build": "Medium"
+  },
+  "mutant_changes_text": "Humans are highly social beings.",
+  "attribute_bonuses": {
+    "IQ": 1,
+    "MA": 2,
+    "ME": 4,
+    "PB": 4
+  },
+  "natural_weapons": [],
+  "abilities": []
 }
+
+
 
 }

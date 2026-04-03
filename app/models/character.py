@@ -98,6 +98,9 @@ class Character:
         "aircraft": [],
     })
 
+    # ---------- TIME MACHINES (TA) ----------
+    ta_time_devices: Dict[str, Any] = field(default_factory=dict)
+
     # ---------- BIO-E ----------
     bio_e: Dict[str, Any] = field(default_factory=lambda: {
         "total": 0,
@@ -219,6 +222,9 @@ class Character:
             c.bio_e.setdefault("total", 0)
             c.bio_e.setdefault("spent", 0)
             c.bio_e.setdefault("traits", [])
+
+        if not isinstance(c.ta_time_devices, dict):
+            c.ta_time_devices = {}
 
         c.image_path = str(c.image_path or "")
         c.armor_type = str(c.armor_type or "")

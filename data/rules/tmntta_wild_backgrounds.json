@@ -1,0 +1,5 @@
+[
+  { "start": 1, "end": 25, "name": "Wilderness" },
+  { "start": 26, "end": 60, "name": "Self-Taught" },
+  { "start": 61, "end": 100, "name": "Special Training" }
+]

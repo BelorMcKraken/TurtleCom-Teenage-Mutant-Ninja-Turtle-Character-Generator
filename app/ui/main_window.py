@@ -6,7 +6,6 @@ import json
 import random
 import re
 import copy
-import subprocess
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QPixmap, QAction
@@ -42,6 +41,7 @@ from PySide6.QtWidgets import (
 from app.config import CHARACTERS_DIR, DATA_DIR, project_root
 from app.models import Character
 from app.services.export_statblock_pdf import export_statblock_pdf
+from app.services.export_ta_time_machine_pdf import export_ta_time_machine_pdf
 from app.services import (
     list_character_files,
     load_character,
@@ -76,10 +76,26 @@ from app.rules.psionic_catalog import (
 from app.rules.size_levels import SIZE_LEVEL_EFFECTS, SIZE_LEVEL_FORMULAS
 from app.rules.combat import BASELINE_COMBAT, COMBAT_TRAINING_RULES
 from app.rules.tmntos_animals import TMNTOS_ANIMAL_TYPE_RANGES, TMNTOS_ANIMALS_BY_TYPE
+from app.rules.tmntta_animals import TMNTTA_ANIMAL_TYPE_RANGES, TMNTTA_ANIMALS_BY_TYPE
 from app.rules.tmntos_backgrounds import (
     TMNTOS_MUTANT_ANIMAL_ORIGINS,
     TMNTOS_CREATOR_ORGANIZATIONS,
     TMNTOS_WILD_ANIMAL_EDUCATION,
+)
+from app.rules.tmntta_backgrounds import (
+    TMNTTA_MUTANT_ANIMAL_ORIGINS,
+    TMNTTA_CONTEMPORARY_ORIGINS,
+    TMNTTA_TIME_TRAVEL_ORIGINS,
+    TMNTTA_CROSS_DIMENSIONAL_ORIGINS,
+    TMNTTA_EXPERIMENTAL_ANIMAL_BACKGROUNDS,
+    TMNTTA_WILD_ANIMAL_BACKGROUNDS,
+)
+from app.rules.tmntta_time_devices import (
+    TMNTTA_TIME_DEVICES,
+    TMNTTA_TEMPORAL_SUPPORT_DEVICES,
+    TMNTTA_TIME_DEVICE_INSTALL_COSTS,
+    TMNTTA_TIME_DEVICES_BY_NAME,
+    TMNTTA_TEMPORAL_SUPPORT_BY_NAME,
 )
 from app.utils.dice import eval_dice_expression, roll_dice, roll_d100
 from app.generators.random_character import (
@@ -164,7 +180,7 @@ QComboBox::down-arrow:on {{
 }}
 """
 APP_NAME = "TurtleCom"
-APP_VERSION = "v3"
+APP_VERSION = "v4.0"
 
 # ---------------- Dark theme (no arrow images here) ----------------
 DARK_QSS = """
@@ -360,6 +376,8 @@ def _combine_melee_damage(dmg_list: list[str]) -> str:
 
 
 
+
+
 class AboutDialog(QDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -414,6 +432,10 @@ class MainWindow(QMainWindow):
         self.pro_model: Optional[QStandardItemModel] = None
         self.amateur_model: Optional[QStandardItemModel] = None
 
+        self.bio_weapon_cost_labels = []
+        self.bio_ability_cost_labels = []
+
+
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
@@ -439,6 +461,37 @@ class MainWindow(QMainWindow):
         self.on_toggle_dark_mode(True)
 
         self.stack.setCurrentWidget(self.welcome_page)
+
+
+    def on_export_ta_pdf(self) -> None:
+        c = self.editor_to_character()
+
+        suggested_name = f"{c.default_filename().replace('.json', '')}.time-machine.pdf"
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Time Machine PDF",
+            str(CHARACTERS_DIR / suggested_name),
+            "PDF Files (*.pdf)",
+        )
+        if not path_str:
+            return
+
+        out_path = Path(path_str)
+        if out_path.suffix.lower() != ".pdf":
+            out_path = out_path.with_suffix(".pdf")
+
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            export_ta_time_machine_pdf(c, out_path)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Export failed",
+                f"Could not export Time Machine PDF:\n{out_path}\n\n{e}",
+            )
+            return
+
+        self.statusBar().showMessage(f"Exported Time Machine PDF: {out_path.name}", 4000)
 
     def on_export_statblock_pdf(self) -> None:
         c = self.editor_to_character()
@@ -506,8 +559,98 @@ class MainWindow(QMainWindow):
             },
         }
         return payload
+    
 
 
+    def _find_payload_by_name(
+        self,
+        table: list[tuple[range, dict[str, str]]],
+        name: str,
+    ) -> dict[str, str]:
+        for _, payload in table:
+            if payload.get("name") == name:
+                return payload
+        return {"name": "", "details": ""}
+
+
+    def _tmntta_origin_subtable(self, category_name: str) -> list[tuple[range, dict[str, str]]]:
+        if category_name == "Contemporary Character":
+            return TMNTTA_CONTEMPORARY_ORIGINS
+        if category_name == "Time-Traveling Character":
+            return TMNTTA_TIME_TRAVEL_ORIGINS
+        if category_name == "Cross-Dimensional Character":
+            return TMNTTA_CROSS_DIMENSIONAL_ORIGINS
+        return []
+
+
+    def _tmntta_background_table_for_origin(
+        self,
+        origin_name: str,
+    ) -> list[tuple[range, dict[str, str]]]:
+        if origin_name in {
+            "Animal Sample from the Jurassic",
+            "Animal Sample from the Cretaceous",
+            "Animal Sample from the Cenozoic",
+            "Animal Sample from the Far Future",
+            "Cloned Prehistoric Animal",
+            "Experimental Test Animal",
+        }:
+            return TMNTTA_EXPERIMENTAL_ANIMAL_BACKGROUNDS
+
+        if origin_name in {
+            "Accidental Cretaceous Hitchhiker",
+            "Accidental Cenozoic Hitchhiker",
+            "Ordinary Mutant Animal Mutated by Temporal Devices",
+        }:
+            return TMNTTA_WILD_ANIMAL_BACKGROUNDS
+
+        if origin_name == "Standard TMNT & Other Strangeness Mutant Animal":
+            return TMNTOS_WILD_ANIMAL_EDUCATION
+
+        return []
+
+
+    def _reload_origin_controls_for_source(self) -> None:
+        source = str(self.cb_animal_source.currentData() or "")
+
+        self.cb_mutant_origin.blockSignals(True)
+        self.cb_background_education.blockSignals(True)
+        self.cb_creator_organization.blockSignals(True)
+        try:
+            self.cb_mutant_origin.clear()
+            self.cb_background_education.clear()
+            self.cb_creator_organization.clear()
+
+            self.cb_mutant_origin.addItem("Roll or select your origin", "")
+            self.cb_background_education.addItem("Roll or select your background", "")
+            self.cb_creator_organization.addItem("Not used for this source", "")
+
+            if source == "tmntos":
+                for _, payload in TMNTOS_MUTANT_ANIMAL_ORIGINS:
+                    self.cb_mutant_origin.addItem(payload["name"], payload["name"])
+                for _, payload in TMNTOS_WILD_ANIMAL_EDUCATION:
+                    self.cb_background_education.addItem(payload["name"], payload["name"])
+                for _, payload in TMNTOS_CREATOR_ORGANIZATIONS:
+                    self.cb_creator_organization.addItem(payload["name"], payload["name"])
+                self.cb_creator_organization.setEnabled(True)
+                self.btn_roll_creator_organization.setEnabled(True)
+
+            elif source == "tmntta":
+                for _, payload in TMNTTA_MUTANT_ANIMAL_ORIGINS:
+                    self.cb_mutant_origin.addItem(payload["name"], payload["name"])
+
+                self.cb_creator_organization.setEnabled(False)
+                self.btn_roll_creator_organization.setEnabled(False)
+
+        finally:
+            self.cb_mutant_origin.blockSignals(False)
+            self.cb_background_education.blockSignals(False)
+            self.cb_creator_organization.blockSignals(False)
+
+        self.ed_mutant_origin_details.clear()
+        self.ed_background_education_details.clear()
+        self.ed_creator_organization_details.clear()
+        
     def on_export_foundry_json(self) -> None:
         payload = self.build_foundry_export_payload()
 
@@ -537,44 +680,82 @@ class MainWindow(QMainWindow):
 
     def on_mutant_origin_changed(self) -> None:
         selected = str(self.cb_mutant_origin.currentData() or "")
+        source = str(self.cb_animal_source.currentData() or "")
         details = ""
 
-        for _, payload in TMNTOS_MUTANT_ANIMAL_ORIGINS:
-            if payload["name"] == selected:
-                details = payload.get("details", "")
-                break
+        if source == "tmntos":
+            for _, payload in TMNTOS_MUTANT_ANIMAL_ORIGINS:
+                if payload["name"] == selected:
+                    details = payload.get("details", "")
+                    break
+            self.ed_mutant_origin_details.setPlainText(details)
+            self.update_creator_organization_enabled()
+            if selected != "Deliberate Experimentation":
+                self.cb_creator_organization.setCurrentIndex(0)
+                self.ed_creator_organization_details.clear()
+            return
 
-        self.ed_mutant_origin_details.setPlainText(details)
-        self.update_creator_organization_enabled()
+        if source == "tmntta":
+            category_payload = self._find_payload_by_name(TMNTTA_MUTANT_ANIMAL_ORIGINS, selected)
+            details = category_payload.get("details", "")
+            self.ed_mutant_origin_details.setPlainText(details)
 
-        if selected != "Deliberate Experimentation":
+            subtable = self._tmntta_origin_subtable(selected)
+
+            self.cb_background_education.blockSignals(True)
+            try:
+                self.cb_background_education.clear()
+                self.cb_background_education.addItem("Roll or select your background", "")
+                for _, payload in subtable:
+                    self.cb_background_education.addItem(payload["name"], payload["name"])
+            finally:
+                self.cb_background_education.blockSignals(False)
+
+            self.ed_background_education_details.clear()
             self.cb_creator_organization.setCurrentIndex(0)
             self.ed_creator_organization_details.clear()
+            self.cb_creator_organization.setEnabled(False)
+            self.btn_roll_creator_organization.setEnabled(False)
 
 
     def on_background_education_changed(self) -> None:
         selected = str(self.cb_background_education.currentData() or "")
+        source = str(self.cb_animal_source.currentData() or "")
         details = ""
 
-        for _, payload in TMNTOS_WILD_ANIMAL_EDUCATION:
-            if payload["name"] == selected:
-                details = payload.get("details", "")
-                break
+        if source == "tmntos":
+            for _, payload in TMNTOS_WILD_ANIMAL_EDUCATION:
+                if payload["name"] == selected:
+                    details = payload.get("details", "")
+                    break
+            self.ed_background_education_details.setPlainText(details)
+            return
 
-        self.ed_background_education_details.setPlainText(details)
+        if source == "tmntta":
+            category_name = str(self.cb_mutant_origin.currentData() or "")
+            table = self._tmntta_origin_subtable(category_name)
+            for _, payload in table:
+                if payload["name"] == selected:
+                    details = payload.get("details", "")
+                    break
+            self.ed_background_education_details.setPlainText(details)
 
 
     def on_creator_organization_changed(self) -> None:
         selected = str(self.cb_creator_organization.currentData() or "")
+        source = str(self.cb_animal_source.currentData() or "")
         details = ""
 
-        for _, payload in TMNTOS_CREATOR_ORGANIZATIONS:
-            if payload["name"] == selected:
-                details = payload.get("details", "")
-                break
+        if source == "tmntos":
+            for _, payload in TMNTOS_CREATOR_ORGANIZATIONS:
+                if payload["name"] == selected:
+                    details = payload.get("details", "")
+                    break
 
         self.ed_creator_organization_details.setPlainText(details)
 
+
+    # app/ui/main_window.py
 
     def build_pdf_field_map(self) -> dict[str, str]:
         c = self.editor_to_character()
@@ -606,7 +787,7 @@ class MainWindow(QMainWindow):
         shield_notes = str(getattr(c, "shield_notes", "") or "")
 
         armor_lookup = ARMOR_BY_NAME.get(armor_type, {}) if armor_type else {}
-        shield_lookup = SHIELD_BY_NAME.get(shield_type, {}) if shield_type else {}
+        shield_lookup = resolve_shield_details(shield_type)
 
         def text(value: Any) -> str:
             if value is None:
@@ -643,39 +824,26 @@ class MainWindow(QMainWindow):
                     total += int(item.get("cost", 0) or 0)
             return total
 
-        def weapon_details(name: str) -> dict[str, str]:
-            raw = WEAPONS_BY_NAME.get(name, {}) if name else {}
-            if not isinstance(raw, dict):
-                raw = {}
-
-            return {
-                "name": name or "",
-                "type": non_empty(raw.get("type"), raw.get("category"), raw.get("class")),
-                "damage": non_empty(raw.get("damage"), raw.get("dmg"), raw.get("md")),
-                "range": non_empty(raw.get("range"), raw.get("effective_range"), raw.get("distance")),
-                "notes": non_empty(raw.get("notes"), raw.get("special"), raw.get("description"), raw.get("ammo")),
-            }
+        def skill_pct(name: str, lookup: dict[str, dict[str, Any]]) -> str:
+            if not name:
+                return ""
+            pct = self._calc_skill_pct(name, lookup)
+            return f"{pct}%" if pct is not None else ""
 
         field_map: dict[str, str] = {
-            # --- Basics / page 1 ---
-            "Name": text(c.name),
-            "Animal": text(getattr(c, "animal", "")),
+            "Name": text(getattr(c, "name", "")),
             "Alignment": text(getattr(c, "alignment", "")),
-            "Disposition.0": text(getattr(c, "disposition", "")),
+            "Sex": text(getattr(c, "gender", "")),
             "Age": text(getattr(c, "age", "")),
-            "Gender": text(getattr(c, "gender", "")),
-            "Weight": text(getattr(c, "weight", "")),
+            "Animal.Type": text(getattr(c, "animal", "")),
+            "Character.Level": text(getattr(c, "level", "")),
+            "XP": text(getattr(c, "xp", "")),
             "Height": text(getattr(c, "height", "")),
-            "Exp": text(getattr(c, "xp", "")),
-            "Level": text(getattr(c, "level", "")),
+            "Weight": text(getattr(c, "weight", "")),
             "Hit.Points": text(getattr(c, "hit_points", "")),
             "SDC": text(getattr(c, "sdc", "")),
-
-            # --- Size / form ---
             "Origin.Animal.Size": text(original.get("size_level", "") or getattr(c, "size", "")),
             "Mutant.Form.Size": text(bio_e.get("mutant_size_label", "") or getattr(c, "size", "")),
-
-            # --- Armor / shield ---
             "Armor.Type": non_empty(getattr(c, "armor_name", ""), armor_type),
             "Armor.Rating": text(getattr(c, "armor_ar", "")),
             "Armor.SDC": text(getattr(c, "armor_sdc", "")),
@@ -690,12 +858,10 @@ class MainWindow(QMainWindow):
                 armor_lookup.get("notes"),
             ),
             "Armor.Properties.1": non_empty(
-                f"Shield: {shield_type}" if shield_type else "",
+                f"Shield: {shield_lookup['name']}" if shield_lookup["name"] else "",
                 shield_notes,
-                shield_lookup.get("notes"),
+                shield_lookup.get("notes", ""),
             ),
-
-            # --- Combat ---
             "Combat.Style": text(combat.get("training", "")),
             "Actions": text(combat.get("actions_per_round", "")),
             "Initiative": text(combat.get("initiative", "")),
@@ -703,18 +869,14 @@ class MainWindow(QMainWindow):
             "Melee.Parry": text(combat.get("parry", "")),
             "Dodge": text(combat.get("dodge", "")),
             "Roll": text(combat.get("roll_with_impact", "")),
-
-            # --- Attributes ---
-            "Intelligence": text(attrs.get("IQ", "")),
-            "Mental.Endurance": text(attrs.get("ME", "")),
-            "Mental.Affinity": text(attrs.get("MA", "")),
-            "Physical.Strength": text(attrs.get("PS", "")),
-            "Physical.Prowess": text(attrs.get("PP", "")),
-            "Physical.Endurance": text(attrs.get("PE", "")),
-            "Physical.Beauty": text(attrs.get("PB", "")),
+            "Intelligence": text(attrs.get("IQ - Intelligence Quotient", "")),
+            "Mental.Endurance": text(attrs.get("ME - Mental Endurance", "")),
+            "Mental.Affinity": text(attrs.get("MA - Mental Affinity", "")),
+            "Physical.Strength": text(attrs.get("PS - Physical Strength", "")),
+            "Physical.Prowess": text(attrs.get("PP - Physical Prowess", "")),
+            "Physical.Endurance": text(attrs.get("PE - Physical Endurance", "")),
+            "Physical.Beauty": text(attrs.get("PB - Physical Beauty", "")),
             "Speed": text(attrs.get("Speed", "")),
-
-            # --- Skills ---
             "Scholastic.Skills.0": text(pro_skills[0] if len(pro_skills) > 0 else ""),
             "Scholastic.Skills.1": text(pro_skills[1] if len(pro_skills) > 1 else ""),
             "Scholastic.Skills.2": text(pro_skills[2] if len(pro_skills) > 2 else ""),
@@ -727,7 +889,6 @@ class MainWindow(QMainWindow):
             "Scholastic.Skills.9": text(pro_skills[9] if len(pro_skills) > 9 else ""),
             "Scholastic.Skills.10": text(pro_skills[10] if len(pro_skills) > 10 else ""),
             "Scholastic.Skills.11": text(pro_skills[11] if len(pro_skills) > 11 else ""),
-
             "Secondary.Skills.0": text(amateur_skills[0] if len(amateur_skills) > 0 else ""),
             "Secondary.Skills.1": text(amateur_skills[1] if len(amateur_skills) > 1 else ""),
             "Secondary.Skills.2": text(amateur_skills[2] if len(amateur_skills) > 2 else ""),
@@ -740,12 +901,8 @@ class MainWindow(QMainWindow):
             "Secondary.Skills.9": text(amateur_skills[9] if len(amateur_skills) > 9 else ""),
             "Secondary.Skills.10": text(amateur_skills[10] if len(amateur_skills) > 10 else ""),
             "Secondary.Skills.11": text(amateur_skills[11] if len(amateur_skills) > 11 else ""),
-
-            # --- Weapons ---
             "Equipment.Valuables.1": text(getattr(c, "total_credits", "")),
             "Equipment.Valuables.2": text(getattr(c, "total_wealth", "")),
-
-            # --- Gear / overflow notes ---
             "Equipment.Valuables.3": text(gear_selected[0] if len(gear_selected) > 0 else ""),
             "Equipment.Valuables.4": text(gear_selected[1] if len(gear_selected) > 1 else ""),
             "Ch.Notes.0": text(gear_selected[2] if len(gear_selected) > 2 else ""),
@@ -756,8 +913,6 @@ class MainWindow(QMainWindow):
             "Ch.Notes.5": text(gear_selected[7] if len(gear_selected) > 7 else ""),
             "Ch.Notes.6": text(gear_selected[8] if len(gear_selected) > 8 else ""),
             "Ch.Notes.7": text(gear_selected[9] if len(gear_selected) > 9 else ""),
-
-            # --- Mutant origin / background / creator ---
             "Origin.Mutant": text(bio_e.get("mutant_origin", {}).get("name", "")),
             "Build.Notes.0": text(bio_e.get("mutant_origin", {}).get("details", "")),
             "Build.Notes.1": text(bio_e.get("background_education", {}).get("name", "")),
@@ -765,11 +920,11 @@ class MainWindow(QMainWindow):
             "Build.Notes.3": text(bio_e.get("background_education", {}).get("details", "")),
             "Build.Notes.4": text(bio_e.get("creator_organization", {}).get("details", "")),
             "Build.Notes.5": text(getattr(c, "notes", "")),
-
-            # --- Original animal / Bio-E summary ---
             "Starting.BioE": text(bio_e.get("total", "")),
             "Final.BioE.Cost": text(bio_e.get("spent", "")),
-            "BioE.Cost.Mutant.Form.Size": text(SIZE_LEVEL_EFFECTS.get(int(bio_e.get("mutant_size_level", 0) or 0), {}).get("bio_e", "")),
+            "BioE.Cost.Mutant.Form.Size": text(
+                SIZE_LEVEL_EFFECTS.get(int(bio_e.get("mutant_size_level", 0) or 0), {}).get("bio_e", "")
+            ),
             "Human.Features.Biped.0": text(human_features.get("biped_label", "")),
             "Human.Features.Hands.0": text(human_features.get("hands_label", "")),
             "Human.Features.Speech.0": text(human_features.get("speech_label", "")),
@@ -784,8 +939,6 @@ class MainWindow(QMainWindow):
                 + int(human_features.get("speech_cost", 0) or 0)
                 + int(human_features.get("looks_cost", 0) or 0)
             ),
-
-            # --- Natural weapons / animal abilities ---
             "Abilities.Animal.Teeth": text(list_item_name(natural_weapons, 0)),
             "Abilities.Animal.Claws": text(list_item_name(natural_weapons, 1)),
             "Abilities.Animal.Horns": text(list_item_name(natural_weapons, 2)),
@@ -794,7 +947,6 @@ class MainWindow(QMainWindow):
             "Abilities.Animal.Other.2": text(list_item_name(animal_abilities, 2)),
             "Abilities.Animal.Other.3": text(list_item_name(animal_abilities, 3)),
             "Abilities.Animal.Other.4": text(list_item_name(animal_abilities, 4)),
-
             "BioE.Cost.Teeth.Abilities": text(list_item_cost(natural_weapons, 0)),
             "BioE.Cost.Claws.Abilities": text(list_item_cost(natural_weapons, 1)),
             "BioE.Cost.Horns.Abilities": text(list_item_cost(natural_weapons, 2)),
@@ -803,8 +955,6 @@ class MainWindow(QMainWindow):
             "BioE.Cost.Other.Abilities.2": text(list_item_cost(animal_abilities, 2)),
             "BioE.Cost.Other.Abilities.3": text(list_item_cost(animal_abilities, 3)),
             "BioE.Cost.Other.Abilities.4": text(list_item_cost(animal_abilities, 4)),
-
-            # --- Mutant animal psionics ---
             "Psionic.Spell.Name.0": text(list_item_name(mutant_animal_psionics, 0)),
             "Psionic.Spell.Name.1": text(list_item_name(mutant_animal_psionics, 1)),
             "Psionic.Spell.Name.2": text(list_item_name(mutant_animal_psionics, 2)),
@@ -813,14 +963,11 @@ class MainWindow(QMainWindow):
             "Psionic.Spell.Name.5": text(list_item_name(mutant_animal_psionics, 5)),
             "Psionic.Spell.Name.6": text(list_item_name(mutant_animal_psionics, 6)),
             "Psionic.Spell.Name.7": text(list_item_name(mutant_animal_psionics, 7)),
-
-            # --- Mutant hominid psionics / prosthetic / abilities overflow into notes ---
             "Ch.Notes.8": text(list_item_name(mutant_hominid_psionics, 0)),
             "Ch.Notes.9": text(list_item_name(mutant_hominid_psionics, 1)),
             "Ch.Notes.10": text(list_item_name(mutant_hominid_psionics, 2)),
             "Ch.Notes.11": text(list_item_name(mutant_prosthetic_psionics, 0)),
             "Ch.Notes.12": text(list_item_name(mutant_human_abilities, 0)),
-
             "Total.Cost.Mutant.Psionics": text(
                 total_cost(mutant_animal_psionics)
                 + total_cost(mutant_hominid_psionics)
@@ -833,15 +980,34 @@ class MainWindow(QMainWindow):
             ),
         }
 
-        # --- Weapon rows ---
+        for i in range(12):
+            pro_name = pro_skills[i] if i < len(pro_skills) else ""
+            pro_pct = skill_pct(pro_name, self.pro_skill_lookup)
+            field_map[f"Scholastic.Skills.Pct.{i}"] = pro_pct
+            field_map[f"Scholastic.Skills.Percent.{i}"] = pro_pct
+
+            ama_name = amateur_skills[i] if i < len(amateur_skills) else ""
+            ama_pct = skill_pct(ama_name, self.amateur_skill_lookup)
+            field_map[f"Secondary.Skills.Pct.{i}"] = ama_pct
+            field_map[f"Secondary.Skills.Percent.{i}"] = ama_pct
+
         weapon_names = [w for w in weapons_selected if str(w).strip()]
         for i, name in enumerate(weapon_names[:6]):
-            details = weapon_details(str(name).strip())
+            details = resolve_weapon_details(str(name).strip())
             field_map[f"Weapon.Proficiency.{i}"] = details["name"]
             field_map[f"Type.Weapon.{i}"] = details["type"]
             field_map[f"W.Damage.{i}"] = details["damage"]
+            field_map[f"Weapon.Damage.{i}"] = details["damage"]
             field_map[f"W.Range.{i}"] = details["range"]
+            field_map[f"Weapon.Range.{i}"] = details["range"]
             field_map[f"W.Notes.{i}"] = details["notes"]
+            field_map[f"Weapon.Notes.{i}"] = details["notes"]
+
+        if shield_lookup["name"]:
+            field_map["Shield.Type"] = shield_lookup["name"]
+            field_map["Shield.SDC"] = shield_lookup["sdc"]
+            field_map["Shield.Parry"] = shield_lookup["parry"]
+            field_map["Shield.Notes"] = non_empty(shield_notes, shield_lookup["notes"])
 
         overflow_lines: list[str] = []
 
@@ -910,112 +1076,119 @@ class MainWindow(QMainWindow):
         add_selected_names(mutant_hominid_abilities)
 
         field_map["__SELECTED_STATIC_LABELS__"] = "\n".join(sorted(set(selected_static_labels), key=str.lower))
-
         return field_map
 
+    def _save_vs_psionic_strangeness_from_me(self, me_value: int) -> int:
+        """
+        Central rule hook for Save vs Psionic & Strangeness.
 
-    def on_export_pdf_flattened(self) -> None:
-        template_path = project_root() / "assets" / "pdf" / "TMNTOS Redux Character Sheet Fillable.pdf"
-        if not template_path.exists():
-            fallback = project_root() / "TMNTOS Redux Character Sheet Fillable.pdf"
-            template_path = fallback
+        Current behavior:
+        - below ME 16 => 0
+        - 16+ => stepped bonus
 
-        if not template_path.exists():
-            QMessageBox.critical(
-                self,
-                "Export failed",
-                "Could not find the TMNTOS fillable PDF template.",
-            )
-            return
+        Edit this table if your house/system rule differs.
+        """
+        if me_value < 16:
+            return 0
+        if me_value <= 17:
+            return 1
+        if me_value <= 19:
+            return 2
+        if me_value <= 21:
+            return 3
+        if me_value <= 23:
+            return 4
+        return 5
 
-        suggested_name = f"{self.editor_to_character().default_filename().replace('.json', '')}.pdf"
-        path_str, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export to PDF",
-            str(CHARACTERS_DIR / suggested_name),
-            "PDF Files (*.pdf)",
-        )
-        if not path_str:
-            return
 
-        out_path = Path(path_str)
-        if out_path.suffix.lower() != ".pdf":
-            out_path = out_path.with_suffix(".pdf")
-
-        payload_path = CHARACTERS_DIR / "_tmp_pdf_fields.json"
-
+    def _recalc_save_vs_psionic_strangeness(self) -> None:
+        me_value = 0
         try:
-            payload_path.parent.mkdir(parents=True, exist_ok=True)
-            payload_path.write_text(
-                json.dumps(self.build_pdf_field_map(), indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            if hasattr(self, "sp_me"):
+                me_value = int(self.sp_me.value() or 0)
+            elif hasattr(self, "attr_spinners") and "ME - Mental Endurance" in self.attr_spinners:
+                me_value = int(self.attr_spinners["ME - Mental Endurance"].value() or 0)
+            elif hasattr(self, "attribute_fields") and "ME - Mental Endurance" in self.attribute_fields:
+                me_value = int(self.attribute_fields["ME - Mental Endurance"].value() or 0)
+        except Exception:
+            me_value = 0
 
-            script_path = project_root() / "tools" / "fill_pdf_form.mjs"
+        value = self._save_vs_psionic_strangeness_from_me(me_value)
 
-            result = subprocess.run(
-                [
-                    "node",
-                    str(script_path),
-                    str(template_path),
-                    str(out_path),
-                    str(payload_path),
-                    "--debug-grid",
-                    "--flatten",
-                ],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
-            if result.returncode != 0:
-                raise RuntimeError(
-                    result.stderr.strip() or result.stdout.strip() or "Unknown PDF export error"
-                )
-
-        except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Export failed",
-                f"Could not export PDF:\n{out_path}\n\n{e}",
-            )
-            return
-        finally:
+        if hasattr(self, "sp_save_vs_psionic_strangeness"):
+            self.sp_save_vs_psionic_strangeness.blockSignals(True)
             try:
-                if payload_path.exists():
-                    payload_path.unlink()
-            except Exception:
-                pass
+                self.sp_save_vs_psionic_strangeness.setValue(value)
+            finally:
+                self.sp_save_vs_psionic_strangeness.blockSignals(False)
 
-        self.statusBar().showMessage(f"Exported PDF: {out_path.name}", 4000)
+    
 
 
     def on_roll_mutant_origin(self) -> None:
-        roll = roll_d100()
-        payload = _pick_payload_from_ranges(TMNTOS_MUTANT_ANIMAL_ORIGINS, roll)
-        name = payload.get("name", "")
+        source = str(self.cb_animal_source.currentData() or "")
 
-        idx = self.cb_mutant_origin.findData(name)
-        self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
-        self.ed_mutant_origin_details.setPlainText(payload.get("details", ""))
-        self.update_creator_organization_enabled()
+        if source == "tmntos":
+            roll = roll_d100()
+            payload = _pick_payload_from_ranges(TMNTOS_MUTANT_ANIMAL_ORIGINS, roll)
+            name = payload.get("name", "")
 
-        if name == "Deliberate Experimentation":
-            self.on_roll_creator_organization()
+            idx = self.cb_mutant_origin.findData(name)
+            self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
+            self.ed_mutant_origin_details.setPlainText(payload.get("details", ""))
+            self.update_creator_organization_enabled()
 
-        self.statusBar().showMessage(f"Mutant Origin roll: {roll} -> {name}", 3000)
+            if name == "Deliberate Experimentation":
+                self.on_roll_creator_organization()
+
+            self.statusBar().showMessage(f"Mutant Origin roll: {roll} -> {name}", 3000)
+            return
+
+        if source == "tmntta":
+            roll = roll_d100()
+            payload = _pick_payload_from_ranges(TMNTTA_MUTANT_ANIMAL_ORIGINS, roll)
+            name = payload.get("name", "")
+
+            idx = self.cb_mutant_origin.findData(name)
+            self.cb_mutant_origin.setCurrentIndex(idx if idx != -1 else 0)
+            self.ed_mutant_origin_details.setPlainText(payload.get("details", ""))
+
+            self.statusBar().showMessage(f"TMNTTA Origin Category: {roll} -> {name}", 4000)
 
 
     def on_roll_background_education(self) -> None:
-        roll = roll_d100()
-        payload = _pick_payload_from_ranges(TMNTOS_WILD_ANIMAL_EDUCATION, roll)
-        name = payload.get("name", "")
+        source = str(self.cb_animal_source.currentData() or "")
 
-        idx = self.cb_background_education.findData(name)
-        self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
-        self.ed_background_education_details.setPlainText(payload.get("details", ""))
+        if source == "tmntos":
+            roll = roll_d100()
+            payload = _pick_payload_from_ranges(TMNTOS_WILD_ANIMAL_EDUCATION, roll)
+            name = payload.get("name", "")
 
-        self.statusBar().showMessage(f"Education roll: {roll} -> {name}", 3000)
+            idx = self.cb_background_education.findData(name)
+            self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
+            self.ed_background_education_details.setPlainText(payload.get("details", ""))
+
+            self.statusBar().showMessage(f"Education roll: {roll} -> {name}", 3000)
+            return
+
+        if source == "tmntta":
+            category_name = str(self.cb_mutant_origin.currentData() or "")
+            table = self._tmntta_origin_subtable(category_name)
+            if not table:
+                self.cb_background_education.setCurrentIndex(0)
+                self.ed_background_education_details.clear()
+                self.statusBar().showMessage("No TMNTTA subtable applies to this origin category.", 3000)
+                return
+
+            roll = roll_d100()
+            payload = _pick_payload_from_ranges(table, roll)
+            name = payload.get("name", "")
+
+            idx = self.cb_background_education.findData(name)
+            self.cb_background_education.setCurrentIndex(idx if idx != -1 else 0)
+            self.ed_background_education_details.setPlainText(payload.get("details", ""))
+
+            self.statusBar().showMessage(f"TMNTTA Sub-Origin: {roll} -> {name}", 3000)
 
 
     def on_roll_creator_organization(self) -> None:
@@ -1087,9 +1260,11 @@ class MainWindow(QMainWindow):
         self.action_export_statblock_pdf.triggered.connect(self.on_export_statblock_pdf)
         file_menu.addAction(self.action_export_statblock_pdf)
 
-        self.action_export_pdf = QAction("Export to &PDF...", self)
-        self.action_export_pdf.triggered.connect(self.on_export_pdf_flattened)
-        file_menu.addAction(self.action_export_pdf)
+        
+
+        self.action_export_ta_pdf = QAction("Export Time Machine PDF...", self)
+        self.action_export_ta_pdf.triggered.connect(self.on_export_ta_pdf)
+        file_menu.addAction(self.action_export_ta_pdf)
 
         file_menu.addSeparator()
 
@@ -1316,6 +1491,15 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Generated random level 1 character")
 
     def update_creator_organization_enabled(self) -> None:
+        source = str(self.cb_animal_source.currentData() or "")
+        if source == "tmntta":
+            self.cb_creator_organization.setEnabled(False)
+            self.ed_creator_organization_details.setEnabled(False)
+            self.btn_roll_creator_organization.setEnabled(False)
+            self.cb_creator_organization.setCurrentIndex(0)
+            self.ed_creator_organization_details.clear()
+            return
+
         is_deliberate = str(self.cb_mutant_origin.currentData() or "") == "Deliberate Experimentation"
         self.cb_creator_organization.setEnabled(is_deliberate)
         self.ed_creator_organization_details.setEnabled(is_deliberate)
@@ -1325,6 +1509,463 @@ class MainWindow(QMainWindow):
             self.cb_creator_organization.setCurrentIndex(0)
             self.ed_creator_organization_details.clear()
 
+    def _ta_reset_builder(self) -> None:
+        if hasattr(self, "cb_ta_device_category"):
+            self.cb_ta_device_category.blockSignals(True)
+            try:
+                self.cb_ta_device_category.setCurrentIndex(0)
+            finally:
+                self.cb_ta_device_category.blockSignals(False)
+
+        if hasattr(self, "cb_ta_device_name"):
+            self.cb_ta_device_name.blockSignals(True)
+            try:
+                self.cb_ta_device_name.clear()
+                self.cb_ta_device_name.addItem("Select device", "")
+            finally:
+                self.cb_ta_device_name.blockSignals(False)
+
+        if hasattr(self, "cb_ta_mount_type"):
+            self.cb_ta_mount_type.blockSignals(True)
+            try:
+                self.cb_ta_mount_type.setCurrentIndex(0)
+            finally:
+                self.cb_ta_mount_type.blockSignals(False)
+
+        if hasattr(self, "cb_ta_vehicle_type"):
+            self.cb_ta_vehicle_type.blockSignals(True)
+            try:
+                self.cb_ta_vehicle_type.setCurrentIndex(0)
+                self.cb_ta_vehicle_type.setEnabled(False)
+            finally:
+                self.cb_ta_vehicle_type.blockSignals(False)
+
+        if hasattr(self, "ed_ta_device_details"):
+            self.ed_ta_device_details.clear()
+
+        if hasattr(self, "ed_ta_mount_notes"):
+            self.ed_ta_mount_notes.clear()
+
+        for cb in getattr(self, "ta_support_device_combos", []):
+            cb.blockSignals(True)
+            try:
+                cb.setCurrentIndex(0)
+            finally:
+                cb.blockSignals(False)
+
+        for chk in getattr(self, "ta_support_portable_checks", []):
+            chk.blockSignals(True)
+            try:
+                chk.setChecked(False)
+            finally:
+                chk.blockSignals(False)
+
+        for sp_name in (
+            "sp_ta_base_cost",
+            "sp_ta_install_cost",
+            "sp_ta_support_cost",
+            "sp_ta_total_cost",
+        ):
+            if hasattr(self, sp_name):
+                sp = getattr(self, sp_name)
+                sp.blockSignals(True)
+                try:
+                    sp.setValue(0)
+                finally:
+                    sp.blockSignals(False)
+
+        if hasattr(self, "ed_ta_summary_notes"):
+            self.ed_ta_summary_notes.clear()
+
+        self.ta_image_path = ""
+        self._ta_set_image_preview("")
+
+    def _ta_populate_device_names_for_category(self, category: str) -> None:
+        if not hasattr(self, "cb_ta_device_name"):
+            return
+
+        self.cb_ta_device_name.blockSignals(True)
+        try:
+            self.cb_ta_device_name.clear()
+            self.cb_ta_device_name.addItem("Select device", "")
+
+            if category == "time_machine":
+                for item in TMNTTA_TIME_DEVICES:
+                    if str(item.get("category", "")) == "time_machine":
+                        name = str(item.get("name", "") or "").strip()
+                        if name:
+                            self.cb_ta_device_name.addItem(name, name)
+
+            elif category == "dimension_device":
+                for item in TMNTTA_TIME_DEVICES:
+                    if str(item.get("category", "")) == "dimension_device":
+                        name = str(item.get("name", "") or "").strip()
+                        if name:
+                            self.cb_ta_device_name.addItem(name, name)
+
+            elif category == "support_device":
+                for item in TMNTTA_TEMPORAL_SUPPORT_DEVICES:
+                    name = str(item.get("name", "") or "").strip()
+                    if name:
+                        self.cb_ta_device_name.addItem(name, name)
+        finally:
+            self.cb_ta_device_name.blockSignals(False)
+
+
+    def _ta_populate_support_device_combos(self) -> None:
+        combos = list(getattr(self, "ta_support_device_combos", []) or [])
+        if not combos:
+            return
+
+        names = []
+        for item in TMNTTA_TEMPORAL_SUPPORT_DEVICES:
+            name = str(item.get("name", "") or "").strip()
+            if name:
+                names.append(name)
+
+        for cb in combos:
+            current_name = str(cb.currentData() or "").strip()
+
+            cb.blockSignals(True)
+            try:
+                cb.clear()
+                cb.addItem("None", "")
+                for name in names:
+                    cb.addItem(name, name)
+            finally:
+                cb.blockSignals(False)
+
+            idx = cb.findData(current_name)
+            cb.setCurrentIndex(idx if idx != -1 else 0)
+
+
+    def _ta_get_selected_device_record(self) -> dict[str, Any]:
+        category = str(self.cb_ta_device_category.currentData() or "").strip()
+        name = str(self.cb_ta_device_name.currentData() or "").strip()
+
+        if not name:
+            return {}
+
+        if category in {"time_machine", "dimension_device"}:
+            return dict(TMNTTA_TIME_DEVICES_BY_NAME.get(name, {}) or {})
+
+        if category == "support_device":
+            return dict(TMNTTA_TEMPORAL_SUPPORT_BY_NAME.get(name, {}) or {})
+
+        return {}
+
+
+    def _ta_get_selected_support_records(self) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
+        for cb in getattr(self, "ta_support_device_combos", []):
+            name = str(cb.currentData() or "").strip()
+            if not name:
+                continue
+            record = dict(TMNTTA_TEMPORAL_SUPPORT_BY_NAME.get(name, {}) or {})
+            if record:
+                records.append(record)
+        return records
+
+
+    def _ta_update_vehicle_type_enabled(self) -> None:
+        if not hasattr(self, "cb_ta_vehicle_type"):
+            return
+
+        mount_type = str(self.cb_ta_mount_type.currentData() or "").strip()
+        enabled = mount_type == "vehicle"
+
+        self.cb_ta_vehicle_type.setEnabled(enabled)
+
+        if not enabled:
+            self.cb_ta_vehicle_type.blockSignals(True)
+            try:
+                self.cb_ta_vehicle_type.setCurrentIndex(0)
+            finally:
+                self.cb_ta_vehicle_type.blockSignals(False)
+
+
+    def _ta_lookup_install_cost(self, device_name: str, vehicle_type: str) -> int:
+        if not device_name or not vehicle_type:
+            return 0
+
+        vehicle_type_map = {
+            "truck_van": "Truck or Van",
+            "compact_sports_car": "Compact or Sports Car",
+            "mid_size_larger_car": "Mid-Size or Larger Car",
+            "motorcycle": "Motorcycle",
+            "aircraft": "Aircraft",
+            "watercraft": "Watercraft",
+            "other_vehicle": "Other Vehicle",
+        }
+
+        expected_vehicle_type = vehicle_type_map.get(vehicle_type, vehicle_type)
+
+        for row in TMNTTA_TIME_DEVICE_INSTALL_COSTS:
+            row_device_name = str(row.get("device_name", "") or "").strip()
+            row_vehicle_type = str(row.get("vehicle_type", "") or "").strip()
+
+            if row_device_name != str(device_name).strip():
+                continue
+            if row_vehicle_type != expected_vehicle_type:
+                continue
+
+            value = row.get("install_cost", 0)
+            if value is None:
+                return 0
+
+            try:
+                return int(value or 0)
+            except Exception:
+                return 0
+
+        return 0
+
+
+    def _ta_calculate_base_cost(self) -> int:
+        record = self._ta_get_selected_device_record()
+        if not record:
+            return 0
+
+        mount_type = str(self.cb_ta_mount_type.currentData() or "").strip()
+
+        if mount_type == "portable":
+            portable_cost = record.get("portable_cost")
+            if portable_cost is not None:
+                try:
+                    return int(portable_cost or 0)
+                except Exception:
+                    pass
+
+        try:
+            return int(record.get("base_cost", 0) or 0)
+        except Exception:
+            return 0
+
+
+    def _ta_calculate_support_cost(self) -> int:
+        total = 0
+        combos = list(getattr(self, "ta_support_device_combos", []) or [])
+        checks = list(getattr(self, "ta_support_portable_checks", []) or [])
+
+        for i, cb in enumerate(combos):
+            name = str(cb.currentData() or "").strip()
+            if not name:
+                continue
+
+            record = dict(TMNTTA_TEMPORAL_SUPPORT_BY_NAME.get(name, {}) or {})
+            if not record:
+                continue
+
+            portable_on = i < len(checks) and bool(checks[i].isChecked())
+
+            value = record.get("portable_cost") if portable_on and record.get("portable_cost") is not None else record.get("base_cost", 0)
+            try:
+                total += int(value or 0)
+            except Exception:
+                continue
+
+        return total
+
+
+    def _ta_build_device_details_text(self, record: dict[str, Any]) -> str:
+        if not record:
+            return ""
+
+        lines: list[str] = []
+
+        name = str(record.get("name", "") or "").strip()
+        category = str(record.get("category", "") or "").strip()
+        base_cost = record.get("base_cost", 0)
+        portable = record.get("portable", None)
+        vehicle_mountable = record.get("vehicle_mountable", None)
+        recharge_time = str(record.get("recharge_time", "") or "").strip()
+        weight_lbs = record.get("weight_lbs", None)
+        max_area = str(record.get("max_area_of_effect", "") or "").strip()
+        bonus_text = str(record.get("bonus_text", "") or "").strip()
+        malfunction_text = str(record.get("malfunction_text", "") or "").strip()
+        details = str(record.get("details", "") or "").strip()
+
+        if name:
+            lines.append(name)
+        if category:
+            lines.append(f"Category: {category}")
+        if base_cost:
+            lines.append(f"Base Cost: ${int(base_cost):,}")
+        if portable is not None:
+            lines.append(f"Portable: {'Yes' if portable else 'No'}")
+        if vehicle_mountable is not None:
+            lines.append(f"Vehicle Mountable: {'Yes' if vehicle_mountable else 'No'}")
+        if weight_lbs not in (None, ""):
+            lines.append(f"Weight: {weight_lbs} lbs")
+        if recharge_time:
+            lines.append(f"Recharge: {recharge_time}")
+        if max_area:
+            lines.append(f"Area: {max_area}")
+        if bonus_text:
+            lines.append(f"Bonus: {bonus_text}")
+        if malfunction_text:
+            lines.append(f"Malfunction: {malfunction_text}")
+        if details:
+            lines.append("")
+            lines.append(details)
+
+        return "\n".join(lines)
+
+
+    def _ta_build_mount_notes_text(self) -> str:
+        lines: list[str] = []
+
+        device_name = str(self.cb_ta_device_name.currentData() or "").strip()
+        mount_type = str(self.cb_ta_mount_type.currentData() or "").strip()
+        vehicle_type = str(self.cb_ta_vehicle_type.currentData() or "").strip()
+
+        if device_name:
+            lines.append(f"Device: {device_name}")
+
+        if mount_type:
+            lines.append(f"Mount Type: {mount_type}")
+
+        if vehicle_type:
+            lines.append(f"Vehicle Type: {vehicle_type}")
+
+        if mount_type == "vehicle" and device_name and vehicle_type:
+            install_cost = self._ta_lookup_install_cost(device_name, vehicle_type)
+            if install_cost > 0:
+                lines.append(f"Install Cost: ${install_cost:,}")
+            else:
+                lines.append("Install Cost: Not available / not supported")
+
+        combos = list(getattr(self, "ta_support_device_combos", []) or [])
+        checks = list(getattr(self, "ta_support_portable_checks", []) or [])
+        chosen_supports: list[str] = []
+
+        for i, cb in enumerate(combos):
+            support_name = str(cb.currentData() or "").strip()
+            if not support_name:
+                continue
+            portable_on = i < len(checks) and bool(checks[i].isChecked())
+            chosen_supports.append(f"{support_name} (portable)" if portable_on else support_name)
+
+        if chosen_supports:
+            lines.append("")
+            lines.append("Support Devices:")
+            for entry in chosen_supports:
+                lines.append(f"- {entry}")
+
+        return "\n".join(lines)
+
+
+    def _ta_set_image_preview(self, image_path: str) -> None:
+        if not hasattr(self, "lbl_ta_image_preview"):
+            return
+
+        image_path = str(image_path or "").strip()
+        if not image_path:
+            self.lbl_ta_image_preview.setText("No time machine image loaded")
+            self.lbl_ta_image_preview.setPixmap(QPixmap())
+            return
+
+        pix = QPixmap(image_path)
+        if pix.isNull():
+            self.lbl_ta_image_preview.setText("Could not load image")
+            self.lbl_ta_image_preview.setPixmap(QPixmap())
+            return
+
+        self.lbl_ta_image_preview.setText("")
+        self.lbl_ta_image_preview.setPixmap(
+            pix.scaled(320, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+
+    def on_ta_load_image(self) -> None:
+        path_str, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Time Machine Image",
+            "",
+            "Images (*.png *.jpg *.jpeg *.webp *.bmp)",
+        )
+        if not path_str:
+            return
+
+        if not hasattr(self, "ta_image_path"):
+            self.ta_image_path = ""
+
+        self.ta_image_path = str(path_str)
+        self._ta_set_image_preview(self.ta_image_path)
+
+
+    def on_ta_clear_image(self) -> None:
+        self.ta_image_path = ""
+        self._ta_set_image_preview("")
+
+    def recalc_ta_time_devices(self) -> None:
+        record = self._ta_get_selected_device_record()
+        base_cost = self._ta_calculate_base_cost()
+
+        mount_type = str(self.cb_ta_mount_type.currentData() or "").strip()
+        vehicle_type = str(self.cb_ta_vehicle_type.currentData() or "").strip()
+        device_name = str(self.cb_ta_device_name.currentData() or "").strip()
+
+        install_cost = 0
+        if mount_type == "vehicle" and device_name and vehicle_type:
+            install_cost = self._ta_lookup_install_cost(device_name, vehicle_type)
+
+        support_cost = self._ta_calculate_support_cost()
+        total_cost = base_cost + install_cost + support_cost
+
+        for sp_name, value in (
+            ("sp_ta_base_cost", base_cost),
+            ("sp_ta_install_cost", install_cost),
+            ("sp_ta_support_cost", support_cost),
+            ("sp_ta_total_cost", total_cost),
+        ):
+            if hasattr(self, sp_name):
+                sp = getattr(self, sp_name)
+                sp.blockSignals(True)
+                try:
+                    sp.setValue(value)
+                finally:
+                    sp.blockSignals(False)
+
+        if hasattr(self, "ed_ta_device_details"):
+            self.ed_ta_device_details.setPlainText(self._ta_build_device_details_text(record))
+
+        if hasattr(self, "ed_ta_mount_notes"):
+            self.ed_ta_mount_notes.setPlainText(self._ta_build_mount_notes_text())
+
+
+    def on_ta_device_category_changed(self) -> None:
+        category = str(self.cb_ta_device_category.currentData() or "").strip()
+
+        self._ta_populate_device_names_for_category(category)
+
+        if hasattr(self, "cb_ta_mount_type"):
+            self.cb_ta_mount_type.blockSignals(True)
+            try:
+                self.cb_ta_mount_type.setCurrentIndex(0)
+            finally:
+                self.cb_ta_mount_type.blockSignals(False)
+
+        self._ta_update_vehicle_type_enabled()
+        self.recalc_ta_time_devices()
+
+
+    def on_ta_device_name_changed(self) -> None:
+        self._ta_update_vehicle_type_enabled()
+        self.recalc_ta_time_devices()
+
+
+    def on_ta_mount_type_changed(self) -> None:
+        self._ta_update_vehicle_type_enabled()
+        self.recalc_ta_time_devices()
+
+
+    def on_ta_vehicle_type_changed(self) -> None:
+        self.recalc_ta_time_devices()
+
+
+    def on_ta_support_devices_changed(self) -> None:
+        self.recalc_ta_time_devices()
 
     def refresh_welcome_list(self) -> None:
         if not hasattr(self, "welcome_list"):
@@ -1651,7 +2292,7 @@ class MainWindow(QMainWindow):
         effects = globals().get("PHYSICAL_SKILL_EFFECTS", {})
 
         totals: dict[str, Any] = {
-            "attributes": {"IQ": 0, "ME": 0, "MA": 0, "PS": 0, "PP": 0, "PE": 0, "PB": 0, "Speed": 0},
+            "attributes": {"IQ - Intelligence Quotient": 0, "ME - Mental Endurance": 0, "MA - Mental Affinity": 0, "PS - Physical Strength": 0, "PP - Physical Prowess": 0, "PE - Physical Endurance": 0, "PB - Physical Beauty": 0, "Speed": 0},
             "combat": {
                 "strike": 0,
                 "parry": 0,
@@ -1678,14 +2319,14 @@ class MainWindow(QMainWindow):
                 continue
 
             for attr_name, amount in effect.get("attribute_bonus", {}).items():
-                key = "Speed" if attr_name == "Spd" else attr_name
+                key = "Speed" if attr_name == "Speed" else attr_name
                 if key in totals["attributes"] and isinstance(amount, int):
                     totals["attributes"][key] += amount
 
             for attr_name in effect.get("attribute_rolls", {}):
                 cache_key = f"attr_{attr_name}"
                 rolled = self.skill_effect_rolls.get(skill_name, {}).get(cache_key, 0)
-                key = "Speed" if attr_name == "Spd" else attr_name
+                key = "Speed" if attr_name == "Speed" else attr_name
                 if key in totals["attributes"]:
                     totals["attributes"][key] += int(rolled)
 
@@ -1836,6 +2477,9 @@ class MainWindow(QMainWindow):
         self.tab_bioe = QWidget()
         self.tab_equipment = QWidget()
         self.tab_vehicles = QWidget()
+        self.tab_time_machines = QWidget()
+        self.tab_custom_vehicles = QWidget()
+        self.tab_custom_air_ships = QWidget()
 
         self.tabs.addTab(self.tab_basics, "Basics")
         self.tabs.addTab(self.tab_attributes, "Attributes")
@@ -1843,7 +2487,10 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.tab_combat, "Combat")
         self.tabs.addTab(self.tab_bioe, "Bio-E / Mutant")
         self.tabs.addTab(self.tab_equipment, "Equipment")
-        self.tabs.addTab(self.tab_vehicles, "Vehicles")
+        self.tabs.addTab(self.tab_vehicles, "Basic Vehicles")
+        self.tabs.addTab(self.tab_time_machines, "Time Machines & Dimension Devices (TA)")
+        self.tabs.addTab(self.tab_custom_vehicles, "Custom Vehicles (RH)")
+        self.tabs.addTab(self.tab_custom_air_ships, "Custom Air Ships (MDU)")
 
         # ===================== Basics tab =====================
         self.basics_layout = self.make_scrollable_tab(self.tab_basics)
@@ -1900,7 +2547,7 @@ class MainWindow(QMainWindow):
         self.cb_animal_source = QComboBox()
         self.cb_animal_source.addItem("Select your source", "")
         self.cb_animal_source.addItem("Teenage Mutant Ninja Turtles & Other Strangeness", "tmntos")
-        self.cb_animal_source.addItem("Teenage Mutant Ninja Turtles Transdimensional Adventures", "tmnttda")
+        self.cb_animal_source.addItem("Teenage Mutant Ninja Turtles Transdimensional Adventures", "tmntta")
         self.cb_animal_source.currentIndexChanged.connect(self.on_animal_source_changed)
         basics_form.addRow("Animal Source", self.cb_animal_source)
 
@@ -2049,7 +2696,7 @@ class MainWindow(QMainWindow):
         size_row.setLayout(size_row_layout)
 
         self.cb_size_level = QComboBox()
-        for lvl in range(1, 21):
+        for lvl in range(1, 26):
             self.cb_size_level.addItem(str(lvl), lvl)
 
         self.cb_size_build = QComboBox()
@@ -2141,7 +2788,7 @@ class MainWindow(QMainWindow):
         self.attributes_layout.addLayout(attr_form)
         self.attribute_fields: dict[str, QSpinBox] = {}
 
-        for attr in ["IQ", "ME", "MA", "PS", "PP", "PE", "PB", "Speed"]:
+        for attr in ["IQ - Intelligence Quotient", "ME - Mental Endurance", "MA - Mental Affinity", "PS - Physical Strength", "PP - Physical Prowess", "PE - Physical Endurance", "PB - Physical Beauty", "Speed"]:
             sp = QSpinBox()
             sp.setRange(0, 100)
             sp.valueChanged.connect(self.recalc_skill_displays)
@@ -2271,17 +2918,36 @@ class MainWindow(QMainWindow):
         self.sp_strike = QSpinBox()
         self.sp_parry = QSpinBox()
         self.sp_dodge = QSpinBox()
+        self.sp_save_vs_psionic_strangeness = QSpinBox()
         self.sp_initiative = QSpinBox()
         self.sp_actions = QSpinBox()
+        self.sp_roll_with_impact = QSpinBox()
+        self.ed_critical_range = QLineEdit()
 
-        for sp in [self.sp_strike, self.sp_parry, self.sp_dodge, self.sp_initiative, self.sp_actions]:
+        for sp in (
+            self.sp_strike,
+            self.sp_parry,
+            self.sp_dodge,
+            self.sp_save_vs_psionic_strangeness,
+            self.sp_initiative,
+            self.sp_actions,
+            self.sp_roll_with_impact,
+        ):
             sp.setRange(-50, 50)
+
+        self.sp_save_vs_psionic_strangeness.setReadOnly(True)
+        self.sp_roll_with_impact.setReadOnly(True)
+        self.ed_critical_range.setReadOnly(True)
 
         combat_form.addRow("Strike", self.sp_strike)
         combat_form.addRow("Parry", self.sp_parry)
         combat_form.addRow("Dodge", self.sp_dodge)
+        combat_form.addRow("Saves VS Psionic & Strangeness", self.sp_save_vs_psionic_strangeness)
         combat_form.addRow("Initiative", self.sp_initiative)
         combat_form.addRow("Actions per Round", self.sp_actions)
+        combat_form.addRow("Roll with Impact", self.sp_roll_with_impact)
+        combat_form.addRow("Critical Range", self.ed_critical_range)
+
         techniques_box = QGroupBox("Combat Techniques / Special Attacks")
         techniques_layout = QVBoxLayout(techniques_box)
 
@@ -2291,6 +2957,14 @@ class MainWindow(QMainWindow):
         combat_form.addRow("", techniques_box)
         self._set_combat_spinboxes_editable(False)
         self.combat_layout.addStretch(1)
+
+        if hasattr(self, "attr_spinners") and "ME - Mental Endurance" in self.attr_spinners:
+            self.attr_spinners["ME - Mental Endurance"].valueChanged.connect(self._recalc_save_vs_psionic_strangeness)
+        
+        if hasattr(self, "attribute_fields") and "ME - Mental Endurance" in self.attribute_fields:
+            self.attribute_fields["ME - Mental Endurance"].valueChanged.connect(self._recalc_save_vs_psionic_strangeness)
+
+        self._recalc_save_vs_psionic_strangeness()
 
         # ===================== Bio-E / Mutant tab =====================
         self.bioe_layout = self.make_scrollable_tab(self.tab_bioe)
@@ -2304,7 +2978,7 @@ class MainWindow(QMainWindow):
         bio_top.addRow("Starting Bio-E", self.sp_bio_total)
 
         self.sp_bio_spent = QSpinBox()
-        self.sp_bio_spent.setRange(0, 999)
+        self.sp_bio_spent.setRange(-999, 999)
         self.sp_bio_spent.setReadOnly(True)
         bio_top.addRow("Spent Bio-E", self.sp_bio_spent)
 
@@ -2334,7 +3008,7 @@ class MainWindow(QMainWindow):
 
         self.cb_bio_mutant_size_level = QComboBox()
         self.cb_bio_mutant_size_level.addItem("Select size level", 0)
-        for lvl in range(1, 21):
+        for lvl in range(1, 26):
             self.cb_bio_mutant_size_level.addItem(str(lvl), lvl)
         self.cb_bio_mutant_size_level.currentIndexChanged.connect(self.recalc_bioe_spent)
         mutant_form.addRow("Mutant Size Level", self.cb_bio_mutant_size_level)
@@ -2626,7 +3300,7 @@ class MainWindow(QMainWindow):
         equip_layout.addWidget(gear_box)
         equip_layout.addStretch(1)
 
-        # ===================== Vehicles tab =====================
+        # ===================== Basic Vehicles tab =====================
         self.vehicles_layout = self.make_scrollable_tab(self.tab_vehicles)
         vehicles_layout = self.vehicles_layout
         self.vehicle_sections: dict[str, dict[str, Any]] = {}
@@ -2639,6 +3313,202 @@ class MainWindow(QMainWindow):
         self.on_animal_source_changed()
         self.recalc_combat_from_training()
         self.recalc_total_wealth()
+
+        # ===================== Time Machines & Dimension Devices (TA) tab =====================
+        self.ta_time_devices_layout = self.make_scrollable_tab(self.tab_time_machines)
+
+        # ---- Section 1: Device selection ----
+        ta_device_box = QGroupBox("Time Machines & Dimension Devices (TA)")
+        ta_device_form = QFormLayout(ta_device_box)
+
+        self.cb_ta_device_category = QComboBox()
+        self.cb_ta_device_category.addItem("Select device category", "")
+        self.cb_ta_device_category.addItem("Time Machine", "time_machine")
+        self.cb_ta_device_category.addItem("Dimension Device", "dimension_device")
+        self.cb_ta_device_category.addItem("Support Device", "support_device")
+
+        self.cb_ta_device_name = QComboBox()
+        self.cb_ta_device_name.addItem("Select device", "")
+
+        self.ed_ta_device_details = QTextEdit()
+        self.ed_ta_device_details.setReadOnly(True)
+        self.ed_ta_device_details.setMinimumHeight(140)
+        self.ed_ta_device_details.setPlaceholderText("Selected device details will appear here...")
+
+        ta_device_form.addRow("Device Category", self.cb_ta_device_category)
+        ta_device_form.addRow("Device Name", self.cb_ta_device_name)
+        ta_device_form.addRow("Device Details", self.ed_ta_device_details)
+
+        self.ta_time_devices_layout.addWidget(ta_device_box)
+
+        # ---- Section 2: Mount / install ----
+        ta_mount_box = QGroupBox("Mount / Installation")
+        ta_mount_form = QFormLayout(ta_mount_box)
+
+        self.cb_ta_mount_type = QComboBox()
+        self.cb_ta_mount_type.addItem("Select mount type", "")
+        self.cb_ta_mount_type.addItem("Standalone", "standalone")
+        self.cb_ta_mount_type.addItem("Portable", "portable")
+        self.cb_ta_mount_type.addItem("Installed in Vehicle", "vehicle")
+
+        self.cb_ta_vehicle_type = QComboBox()
+        self.cb_ta_vehicle_type.addItem("Select vehicle type", "")
+        self.cb_ta_vehicle_type.addItem("Truck or Van", "truck_van")
+        self.cb_ta_vehicle_type.addItem("Compact or Sports Car", "compact_sports_car")
+        self.cb_ta_vehicle_type.addItem("Mid-Size or Larger Car", "mid_size_larger_car")
+        self.cb_ta_vehicle_type.addItem("Motorcycle", "motorcycle")
+        self.cb_ta_vehicle_type.addItem("Aircraft", "aircraft")
+        self.cb_ta_vehicle_type.addItem("Watercraft", "watercraft")
+        self.cb_ta_vehicle_type.addItem("Other Vehicle", "other_vehicle")
+        self.cb_ta_vehicle_type.setEnabled(False)
+
+        self.ed_ta_mount_notes = QTextEdit()
+        self.ed_ta_mount_notes.setReadOnly(True)
+        self.ed_ta_mount_notes.setMinimumHeight(100)
+        self.ed_ta_mount_notes.setPlaceholderText("Mount and installation notes will appear here...")
+
+        ta_mount_form.addRow("Mount Type", self.cb_ta_mount_type)
+        ta_mount_form.addRow("Vehicle Type", self.cb_ta_vehicle_type)
+        ta_mount_form.addRow("Installation Notes", self.ed_ta_mount_notes)
+
+        self.ta_time_devices_layout.addWidget(ta_mount_box)
+
+        # ---- Section 3: Support devices ----
+        ta_support_box = QGroupBox("Support Devices / Sensors")
+        ta_support_layout = QVBoxLayout(ta_support_box)
+
+        self.ta_support_device_combos: list[QComboBox] = []
+        self.ta_support_portable_checks: list[QCheckBox] = []
+
+        for i in range(6):
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+
+            cb = QComboBox()
+            cb.addItem("None", "")
+            cb.setMinimumWidth(360)
+
+            chk = QCheckBox("Portable version")
+
+            row_layout.addWidget(QLabel(f"Support Device {i + 1}"))
+            row_layout.addWidget(cb, 1)
+            row_layout.addWidget(chk)
+
+            self.ta_support_device_combos.append(cb)
+            self.ta_support_portable_checks.append(chk)
+            ta_support_layout.addWidget(row)
+
+        self.ta_time_devices_layout.addWidget(ta_support_box)
+
+        # ---- Section 4: Cost summary ----
+        ta_cost_box = QGroupBox("Cost Summary")
+        ta_cost_form = QFormLayout(ta_cost_box)
+
+        self.sp_ta_base_cost = QSpinBox()
+        self.sp_ta_base_cost.setRange(0, 999_999_999)
+        self.sp_ta_base_cost.setReadOnly(True)
+        self.sp_ta_base_cost.setButtonSymbols(QSpinBox.NoButtons)
+
+        self.sp_ta_install_cost = QSpinBox()
+        self.sp_ta_install_cost.setRange(0, 999_999_999)
+        self.sp_ta_install_cost.setReadOnly(True)
+        self.sp_ta_install_cost.setButtonSymbols(QSpinBox.NoButtons)
+
+        self.sp_ta_support_cost = QSpinBox()
+        self.sp_ta_support_cost.setRange(0, 999_999_999)
+        self.sp_ta_support_cost.setReadOnly(True)
+        self.sp_ta_support_cost.setButtonSymbols(QSpinBox.NoButtons)
+
+        self.sp_ta_total_cost = QSpinBox()
+        self.sp_ta_total_cost.setRange(0, 999_999_999)
+        self.sp_ta_total_cost.setReadOnly(True)
+        self.sp_ta_total_cost.setButtonSymbols(QSpinBox.NoButtons)
+
+        ta_cost_form.addRow("Base Cost", self.sp_ta_base_cost)
+        ta_cost_form.addRow("Installation Cost", self.sp_ta_install_cost)
+        ta_cost_form.addRow("Support Device Cost", self.sp_ta_support_cost)
+        ta_cost_form.addRow("Total Cost", self.sp_ta_total_cost)
+
+        self.ta_time_devices_layout.addWidget(ta_cost_box)
+
+        # ---- Section 5: Builder notes ----
+        ta_notes_box = QGroupBox("Builder Notes")
+        ta_notes_layout = QVBoxLayout(ta_notes_box)
+
+        self.ed_ta_summary_notes = QTextEdit()
+        self.ed_ta_summary_notes.setPlaceholderText("Additional TA builder notes...")
+        self.ed_ta_summary_notes.setMinimumHeight(140)
+
+        ta_notes_layout.addWidget(self.ed_ta_summary_notes)
+        self.ta_time_devices_layout.addWidget(ta_notes_box)
+
+        # ---- Section 6: Time machine image ----
+        ta_image_box = QGroupBox("Time Machine Image")
+        ta_image_layout = QVBoxLayout(ta_image_box)
+
+        self.lbl_ta_image_preview = QLabel("No time machine image loaded")
+        self.lbl_ta_image_preview.setAlignment(Qt.AlignCenter)
+        self.lbl_ta_image_preview.setMinimumHeight(220)
+        self.lbl_ta_image_preview.setStyleSheet("border: 1px solid #3a3a3a; border-radius: 8px;")
+
+        ta_image_btn_row = QHBoxLayout()
+
+        self.btn_ta_load_image = QPushButton("Load Time Machine Image")
+        self.btn_ta_clear_image = QPushButton("Clear Image")
+
+        self.btn_ta_load_image.clicked.connect(self.on_ta_load_image)
+        self.btn_ta_clear_image.clicked.connect(self.on_ta_clear_image)
+
+        ta_image_btn_row.addWidget(self.btn_ta_load_image)
+        ta_image_btn_row.addWidget(self.btn_ta_clear_image)
+
+        ta_image_layout.addWidget(self.lbl_ta_image_preview)
+        ta_image_layout.addLayout(ta_image_btn_row)
+
+        self.ta_time_devices_layout.addWidget(ta_image_box)
+        self.ta_time_devices_layout.addStretch(1)
+
+        # ===================== TA SIGNAL CONNECTIONS =====================
+        self.cb_ta_device_category.currentIndexChanged.connect(self.on_ta_device_category_changed)
+        self.cb_ta_device_name.currentIndexChanged.connect(self.on_ta_device_name_changed)
+        self.cb_ta_mount_type.currentIndexChanged.connect(self.on_ta_mount_type_changed)
+        self.cb_ta_vehicle_type.currentIndexChanged.connect(self.on_ta_vehicle_type_changed)
+
+        for cb in self.ta_support_device_combos:
+            cb.currentIndexChanged.connect(self.on_ta_support_devices_changed)
+
+        for chk in self.ta_support_portable_checks:
+            chk.toggled.connect(self.on_ta_support_devices_changed)
+
+        self._ta_populate_support_device_combos()
+        self._ta_reset_builder()
+
+        # ===================== Custom Vehicles (RH) tab =====================
+        self.custom_vehicles_layout = self.make_scrollable_tab(self.tab_custom_vehicles)
+        cv_box = QGroupBox("Custom Vehicles (RH)")
+        cv_layout = QVBoxLayout(cv_box)
+
+        self.ed_custom_vehicles_placeholder = QTextEdit()
+        self.ed_custom_vehicles_placeholder.setPlaceholderText("Future RH custom vehicle controls go here…")
+        cv_layout.addWidget(self.ed_custom_vehicles_placeholder)
+
+        self.custom_vehicles_layout.addWidget(cv_box)
+        self.custom_vehicles_layout.addStretch(1)
+
+        # ===================== Custom Air Ships (MDU) tab =====================
+        self.custom_air_ships_layout = self.make_scrollable_tab(self.tab_custom_air_ships)
+        ca_box = QGroupBox("Custom Air Ships (MDU)")
+        ca_layout = QVBoxLayout(ca_box)
+
+        self.ed_custom_air_ships_placeholder = QTextEdit()
+        self.ed_custom_air_ships_placeholder.setPlaceholderText("Future MDU custom air ship controls go here…")
+        ca_layout.addWidget(self.ed_custom_air_ships_placeholder)
+
+        self.custom_air_ships_layout.addWidget(ca_box)
+        self.custom_air_ships_layout.addStretch(1)
+
+
 
     # ---------- Dice logging ----------
 
@@ -2668,7 +3538,7 @@ class MainWindow(QMainWindow):
         self.log_roll(f"rolling {count}d{faces}... {rolls} Total = {total}")
     
     def on_roll_hp_clicked(self) -> None:
-        pe_val = self.get_effective_attribute("PE")
+        pe_val = self.get_effective_attribute("PE - Physical Endurance")
         roll = random.randint(1, 6)
         hp = pe_val + roll
         self.sp_hp.setValue(hp)
@@ -2829,7 +3699,7 @@ class MainWindow(QMainWindow):
         self.log_roll(f"Attribute {attr_name}: rolled {rolls} => {total}")
 
     def on_roll_all_attributes(self) -> None:
-        for attr_name in ("IQ", "ME", "MA", "PS", "PP", "PE", "PB", "Speed"):
+        for attr_name in ("IQ - Intelligence Quotient", "ME - Mental Endurance", "MA - Mental Affinity", "PS - Physical Strength", "PP - Physical Prowess", "PE - Physical Endurance", "PB - Physical Beauty", "Speed"):
             self.on_roll_single_attribute(attr_name)
         self.statusBar().showMessage("Rolled all attributes")
 
@@ -2851,12 +3721,21 @@ class MainWindow(QMainWindow):
                     self.cb_animal_type.addItem(tname, tname)
                 self.btn_roll_animal_type.setEnabled(True)
                 self.btn_roll_animal.setEnabled(True)
+
+            elif source == "tmntta":
+                for _, tname in TMNTTA_ANIMAL_TYPE_RANGES:
+                    self.cb_animal_type.addItem(tname, tname)
+                self.btn_roll_animal_type.setEnabled(True)
+                self.btn_roll_animal.setEnabled(True)
+
             else:
                 self.btn_roll_animal_type.setEnabled(False)
                 self.btn_roll_animal.setEnabled(False)
         finally:
             self.cb_animal_type.blockSignals(False)
             self.cb_animal.blockSignals(False)
+
+        self._reload_origin_controls_for_source()
 
     def on_animal_type_changed(self) -> None:
         source = str(self.cb_animal_source.currentData() or "")
@@ -2869,42 +3748,63 @@ class MainWindow(QMainWindow):
 
             if source == "tmntos":
                 table = TMNTOS_ANIMALS_BY_TYPE.get(animal_type, [])
-                for _, aname in table:
-                    self.cb_animal.addItem(aname, aname)
+
+            elif source == "tmntta":
+                table = TMNTTA_ANIMALS_BY_TYPE.get(animal_type, [])
+
+            else:
+                table = []
+
+            for _, aname in table:
+                self.cb_animal.addItem(aname, aname)
         finally:
             self.cb_animal.blockSignals(False)
 
     def on_roll_animal_type(self) -> None:
         source = str(self.cb_animal_source.currentData() or "")
-        if source != "tmntos":
+
+        if source == "tmntos":
+            table = TMNTOS_ANIMAL_TYPE_RANGES
+            source_label = "TMNTOS"
+        elif source == "tmntta":
+            table = TMNTTA_ANIMAL_TYPE_RANGES
+            source_label = "TMNTTA"
+        else:
             return
 
         roll = roll_d100()
-        chosen = pick_from_ranges(TMNTOS_ANIMAL_TYPE_RANGES, roll)
+        chosen = pick_from_ranges(table, roll)
         if not chosen:
             return
 
         idx = self.cb_animal_type.findData(chosen)
         self.cb_animal_type.setCurrentIndex(idx if idx != -1 else 0)
-        self.log_roll(f"Animal Type (TMNTOS): rolled d100={roll} => {chosen}")
+        self.log_roll(f"Animal Type ({source_label}): rolled d100={roll} => {chosen}")
 
     def on_roll_animal(self) -> None:
         source = str(self.cb_animal_source.currentData() or "")
         animal_type = str(self.cb_animal_type.currentData() or "")
 
-        if source != "tmntos":
+        if source == "tmntos":
+            table = TMNTOS_ANIMALS_BY_TYPE.get(animal_type, [])
+            source_label = "TMNTOS"
+        elif source == "tmntta":
+            table = TMNTTA_ANIMALS_BY_TYPE.get(animal_type, [])
+            source_label = "TMNTTA"
+        else:
             return
 
-        table = TMNTOS_ANIMALS_BY_TYPE.get(animal_type, [])
         if not table:
             return
-        roll = _roll_d100()
-        chosen = _pick_from_ranges(table, roll)
+
+        roll = roll_d100()
+        chosen = pick_from_ranges(table, roll)
         if not chosen:
             return
+
         idx = self.cb_animal.findData(chosen)
         self.cb_animal.setCurrentIndex(idx if idx != -1 else 0)
-        self.log_roll(f"Animal (TMNTOS / {animal_type}): rolled d100={roll} => {chosen}")
+        self.log_roll(f"Animal ({source_label}): rolled d100={roll} => {chosen}")
 
 
 
@@ -2917,9 +3817,23 @@ class MainWindow(QMainWindow):
         self.recalc_combat_from_training()
 
     def _set_combat_spinboxes_editable(self, editable: bool) -> None:
-        for sp in (self.sp_strike, self.sp_parry, self.sp_dodge, self.sp_initiative, self.sp_actions):
+        for sp in (
+            self.sp_strike,
+            self.sp_parry,
+            self.sp_dodge,
+            self.sp_save_vs_psionic_strangeness,
+            self.sp_initiative,
+            self.sp_actions,
+            self.sp_roll_with_impact,
+        ):
             sp.setReadOnly(not editable)
-            sp.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows if editable else QSpinBox.ButtonSymbols.NoButtons)
+            sp.setButtonSymbols(
+                QSpinBox.ButtonSymbols.UpDownArrows if editable else QSpinBox.ButtonSymbols.NoButtons
+            )
+
+        if hasattr(self, "ed_critical_range"):
+            self.ed_critical_range.setReadOnly(True)
+            
 
     def _calc_training_summary(self, training_name: str, level: int) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -3011,18 +3925,29 @@ class MainWindow(QMainWindow):
             self.sp_dodge.blockSignals(True)
             self.sp_initiative.blockSignals(True)
             self.sp_actions.blockSignals(True)
+            self.sp_roll_with_impact.blockSignals(True)
             try:
                 self.sp_strike.setValue(derived_strike)
                 self.sp_parry.setValue(derived_parry)
                 self.sp_dodge.setValue(derived_dodge)
                 self.sp_initiative.setValue(derived_initiative)
                 self.sp_actions.setValue(derived_actions)
+                self.sp_roll_with_impact.setValue(derived_roll_with_impact)
             finally:
                 self.sp_strike.blockSignals(False)
                 self.sp_parry.blockSignals(False)
                 self.sp_dodge.blockSignals(False)
                 self.sp_initiative.blockSignals(False)
                 self.sp_actions.blockSignals(False)
+                self.sp_roll_with_impact.blockSignals(False)
+
+        crit_min, crit_max = summary["critical_range"]
+        crit_text = f"{crit_min}" if crit_min == crit_max else f"{crit_min}–{crit_max}"
+
+        if hasattr(self, "ed_critical_range"):
+            self.ed_critical_range.setText(crit_text)
+
+        self._recalc_save_vs_psionic_strangeness()
 
         if not self.chk_combat_auto_details.isChecked():
             return
@@ -3108,7 +4033,7 @@ class MainWindow(QMainWindow):
         return f"{feet}' {inches}\""
 
     def apply_size_effects(self, effects: dict[str, int]) -> None:
-        for attr in ["IQ", "PS", "PE", "Speed"]:
+        for attr in ["IQ - Intelligence Quotient", "PS - Physical Strength", "PE - Physical Endurance", "Speed"]:
             if attr in effects and attr in self.attribute_fields:
                 base = int(self.attribute_fields[attr].value())
                 self.attribute_fields[attr].setValue(max(0, base + int(effects[attr])))
@@ -3357,50 +4282,138 @@ class MainWindow(QMainWindow):
         self.ed_bio_orig_build.setText(str(build))
 
         # Set mutant size selector to original by default (if possible)
-        if isinstance(size_level, int) and 1 <= size_level <= 20:
+        if isinstance(size_level, int) and 1 <= size_level <= 25:
             idx = self.cb_bio_mutant_size_level.findData(size_level)
             self.cb_bio_mutant_size_level.setCurrentIndex(idx if idx != -1 else 0)
 
-    def _bioe_populate_natural_weapons(self, items: list[dict[str, Any]]) -> None:
-        # Populate each combo with None + all weapons
-        for i, cb in enumerate(getattr(self, "bio_weapon_combos", [])):
+    def _bioe_populate_natural_weapons(self, options: list[dict[str, Any] | str]) -> None:
+        combos = list(getattr(self, "bio_weapon_combos", []) or [])
+        cost_labels = list(getattr(self, "bio_weapon_cost_labels", []) or [])
+
+        normalized: list[tuple[str, int]] = [("None", 0)]
+
+        for item in options or []:
+            if isinstance(item, dict):
+                name = str(item.get("name", "") or "").strip()
+                cost = int(item.get("cost", 0) or 0)
+            else:
+                name = str(item or "").strip()
+                cost = 0
+
+            if not name:
+                continue
+
+            normalized.append((name, cost))
+
+        for i, cb in enumerate(combos):
+            previous_data = cb.currentData()
+            previous_name = ""
+            if isinstance(previous_data, dict):
+                previous_name = str(previous_data.get("name", "") or "").strip()
+            if not previous_name:
+                previous_name = str(cb.currentText() or "").strip()
+
+            previous_key = self._bioe_normalize_option_name(previous_name)
+
             cb.blockSignals(True)
             try:
                 cb.clear()
-                cb.addItem("None", None)
-                for it in items:
-                    name = str(it.get("name", "")).strip()
-                    cost = it.get("cost", 0)
-                    if name:
-                        cb.addItem(name, it)  # store dict
-                cb.setCurrentIndex(0)
+                for name, cost in normalized:
+                    label = f"{name} ({cost} Bio-E)" if name != "None" and cost > 0 else name
+                    cb.addItem(label, {"name": name, "cost": cost})
             finally:
                 cb.blockSignals(False)
 
-            # Clear details
-            if i < len(self.bio_weapon_cost_labels):
-                self.bio_weapon_cost_labels[i].setText("0")
-            if i < len(self.bio_weapon_detail_boxes):
-                self.bio_weapon_detail_boxes[i].setPlainText("")
+            restored_index = -1
+            if previous_key:
+                for idx in range(cb.count()):
+                    data = cb.itemData(idx)
+                    if isinstance(data, dict):
+                        item_name = str(data.get("name", "") or "").strip()
+                    else:
+                        item_name = str(cb.itemText(idx) or "").strip()
 
-    def _bioe_populate_abilities(self, items: list[dict[str, Any]]) -> None:
-        for i, cb in enumerate(getattr(self, "bio_ability_combos", [])):
+                    if self._bioe_normalize_option_name(item_name) == previous_key:
+                        restored_index = idx
+                        break
+
+            if restored_index >= 0:
+                cb.setCurrentIndex(restored_index)
+            else:
+                cb.setCurrentIndex(0)
+
+            if i < len(cost_labels):
+                data = cb.currentData() or {}
+                cost = int(data.get("cost", 0) or 0) if isinstance(data, dict) else 0
+                cost_labels[i].setText(str(cost))
+
+    def _bioe_populate_abilities(self, options: list[dict[str, Any] | str]) -> None:
+        combos = list(getattr(self, "bio_ability_combos", []) or [])
+        cost_labels = list(getattr(self, "bio_ability_cost_labels", []) or [])
+
+        normalized: list[tuple[str, int]] = [("None", 0)]
+
+        for item in options or []:
+            if isinstance(item, dict):
+                name = str(item.get("name", "") or "").strip()
+                cost = int(item.get("cost", 0) or 0)
+            else:
+                name = str(item or "").strip()
+                cost = 0
+
+            if not name:
+                continue
+
+            normalized.append((name, cost))
+
+        for i, cb in enumerate(combos):
+            previous_data = cb.currentData()
+            previous_name = ""
+            if isinstance(previous_data, dict):
+                previous_name = str(previous_data.get("name", "") or "").strip()
+            if not previous_name:
+                previous_name = str(cb.currentText() or "").strip()
+
+            previous_key = self._bioe_normalize_option_name(previous_name)
+
             cb.blockSignals(True)
             try:
                 cb.clear()
-                cb.addItem("None", None)
-                for it in items:
-                    name = str(it.get("name", "")).strip()
-                    if name:
-                        cb.addItem(name, it)  # store dict
-                cb.setCurrentIndex(0)
+                for name, cost in normalized:
+                    label = f"{name} ({cost} Bio-E)" if name != "None" and cost > 0 else name
+                    cb.addItem(label, {"name": name, "cost": cost})
             finally:
                 cb.blockSignals(False)
 
-            if i < len(self.bio_ability_cost_labels):
-                self.bio_ability_cost_labels[i].setText("0")
-            if i < len(self.bio_ability_detail_boxes):
-                self.bio_ability_detail_boxes[i].setPlainText("")
+            restored_index = -1
+            if previous_key:
+                for idx in range(cb.count()):
+                    data = cb.itemData(idx)
+                    if isinstance(data, dict):
+                        item_name = str(data.get("name", "") or "").strip()
+                    else:
+                        item_name = str(cb.itemText(idx) or "").strip()
+
+                    if self._bioe_normalize_option_name(item_name) == previous_key:
+                        restored_index = idx
+                        break
+
+            if restored_index >= 0:
+                cb.setCurrentIndex(restored_index)
+            else:
+                cb.setCurrentIndex(0)
+
+            if i < len(cost_labels):
+                data = cb.currentData() or {}
+                cost = int(data.get("cost", 0) or 0) if isinstance(data, dict) else 0
+                cost_labels[i].setText(str(cost))
+
+    def _bioe_normalize_option_name(self, value: str) -> str:
+        text = str(value or "").strip().casefold()
+        text = re.sub(r"\s+", " ", text)
+        text = text.replace(" (", "(")
+        text = text.replace(") ", ")")
+        return text
 
     def update_psionic_availability(self) -> None:
         for cb in getattr(self, "bio_psionic_combos", []):
@@ -3416,9 +4429,15 @@ class MainWindow(QMainWindow):
         raw_text = str(self.cb_animal.currentText() or "").strip()
         animal = raw_data or raw_text
 
+        if not hasattr(self, "bio_weapon_cost_labels"):
+            self.bio_weapon_cost_labels = []
+        if not hasattr(self, "bio_ability_cost_labels"):
+            self.bio_ability_cost_labels = []
+
         if not animal:
             if hasattr(self, "sp_bio_total"):
                 self.sp_bio_total.setValue(0)
+
             if hasattr(self, "ed_bio_orig_size_level"):
                 self.ed_bio_orig_size_level.clear()
             if hasattr(self, "ed_bio_orig_length"):
@@ -3427,9 +4446,25 @@ class MainWindow(QMainWindow):
                 self.ed_bio_orig_weight.clear()
             if hasattr(self, "ed_bio_orig_build"):
                 self.ed_bio_orig_build.clear()
+
+            if hasattr(self, "cb_bio_mutant_size_level"):
+                self.cb_bio_mutant_size_level.blockSignals(True)
+                try:
+                    self.cb_bio_mutant_size_level.setCurrentIndex(0)
+                finally:
+                    self.cb_bio_mutant_size_level.blockSignals(False)
+
+            self._bioe_populate_natural_weapons([])
+            self._bioe_populate_abilities([])
+            self.recalc_bioe_spent()
             return
 
-        rule = self._bioe_get_animal_rule(animal)
+        bioe_key = self._bioe_resolve_key(animal)
+        if bioe_key and bioe_key in BIOE_ANIMAL_DATA:
+            rule = dict(BIOE_ANIMAL_DATA[bioe_key])
+        else:
+            rule = self._bioe_get_animal_rule(animal)
+
         if not isinstance(rule, dict):
             rule = dict(BIOE_DEFAULT_ANIMAL)
 
@@ -3438,81 +4473,73 @@ class MainWindow(QMainWindow):
         if hasattr(self, "sp_bio_total"):
             self.sp_bio_total.setValue(int(rule.get("bio_e", 0) or 0))
 
-        if hasattr(self, "ed_bio_orig_size_level"):
-            self.ed_bio_orig_size_level.setText(str(original.get("size_level", "") or ""))
+        self._bioe_set_original_fields(original)
 
-        if hasattr(self, "ed_bio_orig_length"):
-            length_value = original.get("length", "") or original.get("length_in", "")
-            if isinstance(length_value, int):
-                self.ed_bio_orig_length.setText(self.format_inches(length_value))
-            else:
-                self.ed_bio_orig_length.setText(str(length_value or ""))
+        natural_weapon_options = (
+            rule.get("natural_weapons")
+            or rule.get("animal_natural_weapons")
+            or rule.get("weapons")
+            or []
+        )
+        if not isinstance(natural_weapon_options, list):
+            natural_weapon_options = []
 
-        if hasattr(self, "ed_bio_orig_weight"):
-            weight_value = original.get("weight", "") or original.get("weight_lbs", "")
-            if isinstance(weight_value, int):
-                self.ed_bio_orig_weight.setText(f"{weight_value} lbs")
-            else:
-                self.ed_bio_orig_weight.setText(str(weight_value or ""))
+        animal_ability_options = (
+            rule.get("abilities")
+            or rule.get("animal_abilities")
+            or []
+        )
+        if not isinstance(animal_ability_options, list):
+            animal_ability_options = []
 
-        if hasattr(self, "ed_bio_orig_build"):
-            self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
-
-        if hasattr(self, "cb_bio_mutant_size_level"):
-            size_level = original.get("size_level", 0)
-            if isinstance(size_level, int) and 1 <= size_level <= 20:
-                idx = self.cb_bio_mutant_size_level.findData(size_level)
-                self.cb_bio_mutant_size_level.setCurrentIndex(idx if idx != -1 else 0)
-
-        if hasattr(self, "bio_weapon_combos"):
-            weapon_options = rule.get("natural_weapons", []) or []
-            for cb in self.bio_weapon_combos:
-                current_text = cb.currentText().strip()
-                cb.blockSignals(True)
-                cb.clear()
-                cb.addItem("None", {})
-                for item in weapon_options:
-                    if isinstance(item, dict):
-                        name = str(item.get("name", "") or "").strip()
-                        cost = int(item.get("cost", 0) or 0)
-                        if name:
-                            cb.addItem(name, {"name": name, "cost": cost})
-                restore_idx = cb.findText(current_text, Qt.MatchFixedString)
-                cb.setCurrentIndex(restore_idx if restore_idx != -1 else 0)
-                cb.blockSignals(False)
-
-        if hasattr(self, "bio_ability_combos"):
-            ability_options = rule.get("abilities", []) or []
-            for cb in self.bio_ability_combos:
-                current_text = cb.currentText().strip()
-                cb.blockSignals(True)
-                cb.clear()
-                cb.addItem("None", {})
-                for item in ability_options:
-                    if isinstance(item, dict):
-                        name = str(item.get("name", "") or "").strip()
-                        cost = int(item.get("cost", 0) or 0)
-                        if name:
-                            cb.addItem(name, {"name": name, "cost": cost})
-                restore_idx = cb.findText(current_text, Qt.MatchFixedString)
-                cb.setCurrentIndex(restore_idx if restore_idx != -1 else 0)
-                cb.blockSignals(False)
+        self._bioe_populate_natural_weapons(natural_weapon_options)
+        self._bioe_populate_abilities(animal_ability_options)
 
         self.recalc_bioe_spent()
+    
+
+    def _resolve_bioe_original_size_level(self, rule: dict[str, Any]) -> int:
+        original = rule.get("original", {}) or {}
+
+        candidates = [
+            original.get("size_level"),
+            rule.get("size_level"),
+            rule.get("mutant_size_level"),
+        ]
+
+        for value in candidates:
+            try:
+                size_level = int(value or 0)
+            except Exception:
+                size_level = 0
+            if 1 <= size_level <= 25:
+                return size_level
+
+        return 0
+
 
     def _bioe_size_level_cost(self) -> int:
-        # Placeholder: 5 Bio-E per step from original size level
         try:
             orig = int(self.ed_bio_orig_size_level.text().strip() or "0")
         except Exception:
             orig = 0
+
         try:
             chosen = int(self.cb_bio_mutant_size_level.currentData() or 0)
         except Exception:
             chosen = 0
+
         if orig <= 0 or chosen <= 0:
             return 0
-        return abs(chosen - orig) * 5
+
+        orig_cost = int(SIZE_LEVEL_EFFECTS.get(orig, {}).get("bio_e", 0) or 0)
+        chosen_cost = int(SIZE_LEVEL_EFFECTS.get(chosen, {}).get("bio_e", 0) or 0)
+
+        steps_delta = chosen - orig
+        if steps_delta < 0:
+            return steps_delta * 5
+
+        return chosen_cost - orig_cost
 
     def recalc_bioe_spent(self) -> None:
         total_spent = 0
@@ -3535,7 +4562,6 @@ class MainWindow(QMainWindow):
                     entries.append({"name": label.split(" (", 1)[0], "cost": cost})
             return entries
 
-        # --- Human features ---
         for cb in (
             getattr(self, "cb_human_hands", None),
             getattr(self, "cb_human_biped", None),
@@ -3545,59 +4571,35 @@ class MainWindow(QMainWindow):
             if cb is not None:
                 total_spent += combo_cost(cb)
 
-        # --- Mutant size level cost/effects ---
-        mutant_size_level = 0
-        mutant_size_cb = getattr(self, "cb_bio_mutant_size_level", None)
-        if mutant_size_cb is not None:
-            try:
-                mutant_size_level = int(mutant_size_cb.currentData() or 0)
-            except Exception:
-                mutant_size_level = 0
+        total_spent += self._bioe_size_level_cost()
 
-        if mutant_size_level > 0:
-            size_effect = SIZE_LEVEL_EFFECTS.get(mutant_size_level, {})
-            total_spent += int(size_effect.get("bio_e", 0) or 0)
-
-        # --- Natural weapons ---
         for cb in getattr(self, "bio_weapon_combos", []):
             total_spent += combo_cost(cb)
 
-        # --- Animal abilities ---
         for cb in getattr(self, "bio_ability_combos", []):
             total_spent += combo_cost(cb)
 
-        # --- New categorized psionics / abilities ---
         mutant_animal_psionics = selected_catalog_entries("bio_mutant_animal_psionic_combos")
         mutant_hominid_psionics = selected_catalog_entries("bio_mutant_hominid_psionic_combos")
         mutant_prosthetic_psionics = selected_catalog_entries("bio_mutant_prosthetic_psionic_combos")
         mutant_human_abilities = selected_catalog_entries("bio_mutant_human_ability_combos")
         mutant_hominid_abilities = selected_catalog_entries("bio_mutant_hominid_ability_combos")
 
-        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_animal_psionics)
-        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_hominid_psionics)
-        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_prosthetic_psionics)
-        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_human_abilities)
-        total_spent += sum(int(item.get("cost", 0) or 0) for item in mutant_hominid_abilities)
+        for entries in (
+            mutant_animal_psionics,
+            mutant_hominid_psionics,
+            mutant_prosthetic_psionics,
+            mutant_human_abilities,
+            mutant_hominid_abilities,
+        ):
+            total_spent += sum(int(entry.get("cost", 0) or 0) for entry in entries)
 
-        # --- Keep original-animal fields refreshed if possible ---
-        animal_key = str(self.cb_animal.currentData() or "").strip()
-        animal_info = BIOE_ANIMAL_DATA.get(animal_key, BIOE_DEFAULT_ANIMAL) if animal_key else BIOE_DEFAULT_ANIMAL
-        original = animal_info.get("original", {}) if isinstance(animal_info, dict) else {}
+        self.sp_bio_spent.setValue(total_spent)
 
-        if hasattr(self, "ed_bio_orig_size_level"):
-            self.ed_bio_orig_size_level.setText(str(original.get("size_level", "") or ""))
-        if hasattr(self, "ed_bio_orig_length"):
-            self.ed_bio_orig_length.setText(str(original.get("length", "") or original.get("length_in", "") or ""))
-        if hasattr(self, "ed_bio_orig_weight"):
-            self.ed_bio_orig_weight.setText(str(original.get("weight", "") or original.get("weight_lbs", "") or ""))
-        if hasattr(self, "ed_bio_orig_build"):
-            self.ed_bio_orig_build.setText(str(original.get("build", "") or ""))
-
-        if hasattr(self, "sp_bio_spent"):
-            self.sp_bio_spent.blockSignals(True)
-            self.sp_bio_spent.setValue(int(total_spent))
-            self.sp_bio_spent.blockSignals(False)
-
+        if hasattr(self, "lbl_bio_remaining"):
+            total = int(self.sp_bio_total.value() or 0)
+            remaining = total - total_spent
+            self.lbl_bio_remaining.setText(f"Remaining Bio-E: {remaining}")
 
 
 
@@ -3958,8 +4960,11 @@ class MainWindow(QMainWindow):
         c.combat["strike"] = int(self.sp_strike.value())
         c.combat["parry"] = int(self.sp_parry.value())
         c.combat["dodge"] = int(self.sp_dodge.value())
+        c.combat["save_vs_psionic_strangeness"] = int(self.sp_save_vs_psionic_strangeness.value() or 0)
         c.combat["initiative"] = int(self.sp_initiative.value())
         c.combat["actions_per_round"] = int(self.sp_actions.value())
+        c.combat["roll_with_impact"] = int(self.sp_roll_with_impact.value() or 0)
+        c.combat["critical_range"] = str(self.ed_critical_range.text() or "").strip()
 
         vehicles: dict[str, list[str]] = {"landcraft": [], "watercraft": [], "aircraft": []}
         for key in ("landcraft", "watercraft", "aircraft"):
@@ -3975,6 +4980,40 @@ class MainWindow(QMainWindow):
             setattr(c, "vehicles", vehicles)
         except Exception:
             pass
+
+
+        ta_support_devices: list[dict[str, Any]] = []
+        combos = list(getattr(self, "ta_support_device_combos", []) or [])
+        checks = list(getattr(self, "ta_support_portable_checks", []) or [])
+
+        for i, cb in enumerate(combos):
+            support_name = str(cb.currentData() or "").strip()
+            if not support_name:
+                continue
+
+            portable_on = i < len(checks) and bool(checks[i].isChecked())
+            ta_support_devices.append(
+                {
+                    "name": support_name,
+                    "portable": portable_on,
+                }
+            )
+
+        
+        c.ta_time_devices = {
+            "device_category": str(getattr(self, "cb_ta_device_category").currentData() or "").strip() if hasattr(self, "cb_ta_device_category") else "",
+            "device_name": str(getattr(self, "cb_ta_device_name").currentData() or "").strip() if hasattr(self, "cb_ta_device_name") else "",
+            "mount_type": str(getattr(self, "cb_ta_mount_type").currentData() or "").strip() if hasattr(self, "cb_ta_mount_type") else "",
+            "vehicle_type": str(getattr(self, "cb_ta_vehicle_type").currentData() or "").strip() if hasattr(self, "cb_ta_vehicle_type") else "",
+            "base_cost": int(getattr(self, "sp_ta_base_cost").value() or 0) if hasattr(self, "sp_ta_base_cost") else 0,
+            "install_cost": int(getattr(self, "sp_ta_install_cost").value() or 0) if hasattr(self, "sp_ta_install_cost") else 0,
+            "support_cost": int(getattr(self, "sp_ta_support_cost").value() or 0) if hasattr(self, "sp_ta_support_cost") else 0,
+            "total_cost": int(getattr(self, "sp_ta_total_cost").value() or 0) if hasattr(self, "sp_ta_total_cost") else 0,
+            "selected_support_devices": ta_support_devices,
+            "notes": str(getattr(self, "ed_ta_summary_notes").toPlainText() or "").strip() if hasattr(self, "ed_ta_summary_notes") else "",
+            "image_path": str(getattr(self, "ta_image_path", "") or "").strip(),
+            "device_record": self._ta_get_selected_device_record(),
+        }
 
         c.bio_e["total"] = int(self.sp_bio_total.value())
         c.bio_e["spent"] = int(self.sp_bio_spent.value())
@@ -4003,15 +5042,33 @@ class MainWindow(QMainWindow):
         nw: list[dict[str, Any]] = []
         for cb in getattr(self, "bio_weapon_combos", []):
             data = cb.currentData()
-            if isinstance(data, dict):
-                nw.append({"name": str(data.get("name", "")), "cost": int(data.get("cost", 0) or 0)})
+            if not isinstance(data, dict):
+                continue
+
+            name = str(data.get("name", "") or "").strip()
+            cost = int(data.get("cost", 0) or 0)
+
+            if not name or self._bioe_normalize_option_name(name) == "none":
+                continue
+
+            nw.append({"name": name, "cost": cost})
+
         c.bio_e["natural_weapons"] = nw
 
         ab: list[dict[str, Any]] = []
         for cb in getattr(self, "bio_ability_combos", []):
             data = cb.currentData()
-            if isinstance(data, dict):
-                ab.append({"name": str(data.get("name", "")), "cost": int(data.get("cost", 0) or 0)})
+            if not isinstance(data, dict):
+                continue
+
+            name = str(data.get("name", "") or "").strip()
+            cost = int(data.get("cost", 0) or 0)
+
+            if not name or self._bioe_normalize_option_name(name) == "none":
+                continue
+
+            ab.append({"name": name, "cost": cost})
+
         c.bio_e["abilities"] = ab
 
         mutant_animal_psionics = collect_catalog_entries("bio_mutant_animal_psionic_combos")
@@ -4040,6 +5097,9 @@ class MainWindow(QMainWindow):
                 )
 
         return c
+    
+        
+
 
     def load_into_editor(self, c: Character, path: Optional[Path]) -> None:
         self.current_character = c
@@ -4235,8 +5295,17 @@ class MainWindow(QMainWindow):
             self.sp_strike.setValue(int(getattr(c, "combat", {}).get("strike", 0)))
             self.sp_parry.setValue(int(getattr(c, "combat", {}).get("parry", 0)))
             self.sp_dodge.setValue(int(getattr(c, "combat", {}).get("dodge", 0)))
+            self.sp_save_vs_psionic_strangeness.setValue(
+                int(getattr(c, "combat", {}).get("save_vs_psionic_strangeness", 0) or 0)
+            )
             self.sp_initiative.setValue(int(getattr(c, "combat", {}).get("initiative", 0)))
             self.sp_actions.setValue(int(getattr(c, "combat", {}).get("actions_per_round", 2)))
+            self.sp_roll_with_impact.setValue(
+                int(getattr(c, "combat", {}).get("roll_with_impact", 0) or 0)
+            )
+            self.ed_critical_range.setText(
+                str(getattr(c, "combat", {}).get("critical_range", "") or "")
+            )
 
         if not auto_details:
             self.ed_combat_training_details.setPlainText(
@@ -4281,6 +5350,55 @@ class MainWindow(QMainWindow):
 
         self.on_bioe_animal_selected()
 
+        saved_natural_weapons = list(getattr(c, "bio_e", {}).get("natural_weapons", []) or [])
+        saved_abilities = list(getattr(c, "bio_e", {}).get("abilities", []) or [])
+
+        for i, cb in enumerate(getattr(self, "bio_weapon_combos", [])):
+            desired_name = ""
+            if i < len(saved_natural_weapons) and isinstance(saved_natural_weapons[i], dict):
+                desired_name = str(saved_natural_weapons[i].get("name", "") or "").strip()
+
+            desired_key = self._bioe_normalize_option_name(desired_name)
+            found_index = -1
+
+            if desired_key:
+                for idx in range(cb.count()):
+                    data = cb.itemData(idx)
+                    item_name = (
+                        str(data.get("name", "") or "").strip()
+                        if isinstance(data, dict)
+                        else str(cb.itemText(idx) or "").strip()
+                    )
+                    if self._bioe_normalize_option_name(item_name) == desired_key:
+                        found_index = idx
+                        break
+
+            cb.setCurrentIndex(found_index if found_index >= 0 else 0)
+
+        for i, cb in enumerate(getattr(self, "bio_ability_combos", [])):
+            desired_name = ""
+            if i < len(saved_abilities) and isinstance(saved_abilities[i], dict):
+                desired_name = str(saved_abilities[i].get("name", "") or "").strip()
+
+            desired_key = self._bioe_normalize_option_name(desired_name)
+            found_index = -1
+
+            if desired_key:
+                for idx in range(cb.count()):
+                    data = cb.itemData(idx)
+                    item_name = (
+                        str(data.get("name", "") or "").strip()
+                        if isinstance(data, dict)
+                        else str(cb.itemText(idx) or "").strip()
+                    )
+                    if self._bioe_normalize_option_name(item_name) == desired_key:
+                        found_index = idx
+                        break
+
+            cb.setCurrentIndex(found_index if found_index >= 0 else 0)
+
+        self.recalc_bioe_spent()
+
         mutant_size = int(getattr(c, "bio_e", {}).get("mutant_size_level", 0) or 0)
         mutant_size_label = str(getattr(c, "bio_e", {}).get("mutant_size_label", "") or "")
 
@@ -4305,25 +5423,7 @@ class MainWindow(QMainWindow):
                     idx = cb.findText(label)
                 cb.setCurrentIndex(idx if idx != -1 else 0)
 
-        saved_nw = getattr(c, "bio_e", {}).get("natural_weapons", []) or []
-        if isinstance(saved_nw, list):
-            for i, cb in enumerate(getattr(self, "bio_weapon_combos", [])):
-                desired = saved_nw[i].get("name") if i < len(saved_nw) and isinstance(saved_nw[i], dict) else ""
-                if desired:
-                    idx = cb.findText(desired, Qt.MatchFixedString)
-                    cb.setCurrentIndex(idx if idx != -1 else 0)
-                else:
-                    cb.setCurrentIndex(0)
-
-        saved_ab = getattr(c, "bio_e", {}).get("abilities", []) or []
-        if isinstance(saved_ab, list):
-            for i, cb in enumerate(getattr(self, "bio_ability_combos", [])):
-                desired = saved_ab[i].get("name") if i < len(saved_ab) and isinstance(saved_ab[i], dict) else ""
-                if desired:
-                    idx = cb.findText(desired, Qt.MatchFixedString)
-                    cb.setCurrentIndex(idx if idx != -1 else 0)
-                else:
-                    cb.setCurrentIndex(0)
+        
 
         saved_animal_ps = getattr(c, "bio_e", {}).get("mutant_animal_psionic_powers", []) or getattr(c, "bio_e", {}).get("psionics", []) or []
         if isinstance(saved_animal_ps, list):
@@ -4411,3 +5511,72 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("New (unsaved) character")
 
         self.on_skills_changed()
+
+        ta_data = getattr(c, "ta_time_devices", {}) or {}
+        if not isinstance(ta_data, dict):
+            ta_data = {}
+
+        if hasattr(self, "cb_ta_device_category"):
+            idx = self.cb_ta_device_category.findData(str(ta_data.get("device_category", "") or "").strip())
+            self.cb_ta_device_category.setCurrentIndex(idx if idx != -1 else 0)
+            self.on_ta_device_category_changed()
+
+        if hasattr(self, "cb_ta_device_name"):
+            idx = self.cb_ta_device_name.findData(str(ta_data.get("device_name", "") or "").strip())
+            self.cb_ta_device_name.setCurrentIndex(idx if idx != -1 else 0)
+
+        if hasattr(self, "cb_ta_mount_type"):
+            idx = self.cb_ta_mount_type.findData(str(ta_data.get("mount_type", "") or "").strip())
+            self.cb_ta_mount_type.setCurrentIndex(idx if idx != -1 else 0)
+
+        self._ta_update_vehicle_type_enabled()
+
+        if hasattr(self, "cb_ta_vehicle_type"):
+            idx = self.cb_ta_vehicle_type.findData(str(ta_data.get("vehicle_type", "") or "").strip())
+            self.cb_ta_vehicle_type.setCurrentIndex(idx if idx != -1 else 0)
+
+        saved_supports = list(ta_data.get("selected_support_devices", []) or [])
+
+        combos = list(getattr(self, "ta_support_device_combos", []) or [])
+        checks = list(getattr(self, "ta_support_portable_checks", []) or [])
+
+        for i, cb in enumerate(combos):
+            support_name = ""
+            portable_on = False
+
+            if i < len(saved_supports) and isinstance(saved_supports[i], dict):
+                support_name = str(saved_supports[i].get("name", "") or "").strip()
+                portable_on = bool(saved_supports[i].get("portable", False))
+
+            idx = cb.findData(support_name)
+            cb.setCurrentIndex(idx if idx != -1 else 0)
+
+            if i < len(checks):
+                checks[i].setChecked(portable_on)
+
+        if hasattr(self, "ed_ta_summary_notes"):
+            self.ed_ta_summary_notes.setPlainText(str(ta_data.get("notes", "") or "").strip())
+
+        self.ta_image_path = str(ta_data.get("image_path", "") or "").strip()
+        self._ta_set_image_preview(self.ta_image_path)
+
+        self.recalc_ta_time_devices()
+
+        # Only set default notes for NEW characters
+        if not getattr(c, "notes", "").strip():
+            if hasattr(self, "ed_notes"):
+                self.ed_notes.setPlainText(
+                    "Cowabunga dudes!\n\n"
+                    "TurtleCom is a fan-built character management and content tool for Teenage Mutant Ninja Turtles & Other Strangeness (TMNTOS), designed to streamline character creation, organization, and gameplay for players and GMs.\n\n"
+                    "Created by Belor McKraken, a tabletop gaming enthusiast and developer focused on accessible tools for the TTRPG community.\n\n"
+                    "Contact:\n"
+                    "Email: your-email@example.com\n"
+                    "Discord: Belor McKraken\n\n"
+                    "Disclaimer:\n"
+                    "This is an unofficial fan project and is not affiliated with or endorsed by Palladium Books.\n"
+                    "All related names, logos, and trademarks are the property of their respective owners.\n"
+                    "For personal, non-commercial use only.\n\n"
+                    "(TA) = Transdimensional Adventures REDUX\n"
+                    "(RH) = Road Hogs\n"
+                    "(MDU) = Mutants Down Under"
+                )

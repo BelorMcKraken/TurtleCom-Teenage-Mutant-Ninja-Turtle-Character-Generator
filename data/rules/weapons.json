@@ -10,7 +10,8 @@
   {"name": "Long Spear", "cost": "$180", "details": "2-Handed; Damage 1D8; 2.1–3.0m; 2.9kg"},
   {"name": "Javelin", "cost": "$180", "details": "Damage 1D6; 2.1m; 1.8kg"},
   {"name": "Trident", "cost": "$240", "details": "2-Handed; Damage 3D4; 1.5m; 1.8kg"},
-  {"name": "Daggers & Knives", "cost": "$30–$100", "details": "Damage 1D6; 0.2–0.5m; 0.5kg"},
+  {"name": "Knives", "cost": "$30", "details": "Damage 1D6; 0.2–0.5m; 0.5kg"},
+  {"name": "Daggers", "cost": "$100", "details": "Damage 1D6; 0.2–0.5m; 0.5kg"},
   {"name": "Shortsword", "cost": "$180", "details": "Damage 1D8; 0.7m; 1.4kg"},
   {"name": "Sabre", "cost": "$230", "details": "Damage 1D10; 0.6m; 1.4kg"},
   {"name": "Bastard Sword", "cost": "$450", "details": "2-Handed; Damage 1D10+2; 1.0m; 2.1kg"},
@@ -29,8 +30,10 @@
   {"name": "Bo Staff", "cost": "$240", "details": "2-Handed; Damage 1D8; 2.4m; 2.4kg"},
   {"name": "Quarterstaff", "cost": "$240", "details": "2-Handed; Damage 1D8; 1.8m; 1.5kg"},
   {"name": "Iron Staff", "cost": "$330", "details": "2-Handed; Damage 1D8+2; 1.8–2.1m; 3.2kg"},
-  {"name": "Katana", "cost": "$300–$5000", "details": "Damage 2D6–3D6; top-quality does more damage"},
-  {"name": "Wakizashi", "cost": "$250–$4000", "details": "Damage 1D8–2D6; short sword"},
+  {"name": "Katana (low-quality)", "cost": "$300", "details": "Damage 2D6"},
+  {"name": "Katana (top-quality)", "cost": "$5000", "details": "Damage 3D6"},
+  {"name": "Wakizashi (low-quality)", "cost": "$250", "details": "Damage 1D8; short sword"},
+  {"name": "Wakizashi (top-quality)", "cost": "$4000", "details": "Damage 2D6; short sword"},
   {"name": "Kusarigama", "cost": "$300", "details": "Damage 1D10; chain + sickle"},
   {"name": "Kyoketsu-Shoge", "cost": "$100", "details": "Damage 1D8; rope + iron ring"},
   {"name": "Kawanga", "cost": "$50", "details": "Damage 1D8; rope + grapple"},
@@ -40,7 +43,8 @@
   {"name": "Nunchaku (Ninja)", "cost": "$30", "details": "Damage 1D8; +1 Strike on entangles"},
   {"name": "Sa Tjat Koen", "cost": "$150", "details": "Damage 1D10; triple-handled chain weapon"},
   {"name": "Shikomizue", "cost": "$150", "details": "Damage 1D8; concealed blade staff"},
-  {"name": "Shuriken/Throwing Knives", "cost": "$5–$10", "details": "Damage 1D4; high concealment"},
+  {"name": "Shuriken", "cost": "$5", "details": "Damage 1D4; high concealment"},
+  {"name": "Throwing Knives", "cost": "$10", "details": "Damage 1D4; high concealment"},
   {"name": "Jitte or Sai (each)", "cost": "$50", "details": "Damage 1D6; +1 Strike on disarms"},
   {"name": ".22 Revolver (Saturday Night Special)", "cost": "$100", "details": "6–8 shots; 30 yd; Damage 1D8"},
   {"name": "Ruger Service-Six (.38 Special)", "cost": "$250", "details": "6 shots; 50 yd; Damage 2D6 (or 3D6 +P)"},
@@ -67,5 +71,39 @@
   {"name": "Liquid Nitroglycerin (per oz)", "cost": "$25", "details": "1 oz = 4 sticks dynamite; 25% accidental detonation"},
   {"name": "Plastic Explosives (per oz)", "cost": "$100", "details": "Damage 1D4×10 per ounce"},
   {"name": "Molotov Cocktail", "cost": "$2", "details": "3D6 fire; burns 3D4 rounds"},
-  {"name": "Homemade Bomb", "cost": "$20", "details": "3D12 (2D4-yd radius)"}
+  {"name": "Homemade Bomb", "cost": "$20", "details": "3D12 (2D4-yd radius)"},
+  {"name": "Flint Knife (TA)", "cost": "$150", "details": "Damage 1D6"},
+  {"name": "Flint Axe (TA)", "cost": "$400", "details": "Damage 2D6"},
+  {"name": "Primitive Bow (TA)", "cost": "$500", "details": "Damage 2D6; 24 arrows"},
+
+  {"name": "Bronze Dagger (TA)", "cost": "$200", "details": "Damage 1D6"},
+  {"name": "Bronze Spear (TA)", "cost": "$300", "details": "Damage 1D8"},
+  {"name": "Bronze Long Sword (TA)", "cost": "$600", "details": "Damage 2D6"},
+
+  {"name": "Roman Gladius (TA)", "cost": "$800", "details": "Damage 2D6"},
+  {"name": "Roman Shield (TA)", "cost": "$600", "details": "Defensive"},
+
+  {"name": "Long Sword (Medieval) (TA)", "cost": "$1000", "details": "Damage 2D6"},
+  {"name": "Battle Axe (Medieval) (TA)", "cost": "$800", "details": "Damage 2D6"},
+  {"name": "Dagger (Medieval) (TA)", "cost": "$200", "details": "Damage 1D6"},
+  {"name": "Iron Spear (TA)", "cost": "$500", "details": "Damage 1D8"},
+
+  {"name": "Crossbow (TA)", "cost": "$750", "details": "Damage 2D6; Range 60yd"},
+  {"name": "Longbow (TA)", "cost": "$500", "details": "Damage 2D6; Range 200yd"},
+
+  {"name": "Arquebus (TA)", "cost": "$400", "details": "Damage 3D6; early firearm"},
+  {"name": "Matchlock Rifle (TA)", "cost": "$800", "details": "Damage 4D6"},
+  {"name": "Flintlock Musket (TA)", "cost": "$350", "details": "Damage 5D6"},
+  {"name": "Flintlock Pistol (TA)", "cost": "$125", "details": "Damage 3D6"},
+
+  {"name": "Kentucky Long Rifle (TA)", "cost": "$300", "details": "Damage 4D6"},
+  {"name": "Charleville Musket (TA)", "cost": "$350", "details": "Damage 5D6"},
+
+  {"name": "Percussion Cap Rifle (TA)", "cost": "$250", "details": "Damage 5D6"},
+  {"name": "Sharps Rifle (TA)", "cost": "$400", "details": "Damage 5D6"},
+  {"name": "Spencer Repeating Rifle (TA)", "cost": "$1000", "details": "Damage 5D6"},
+  {"name": "Henry Rifle (TA)", "cost": "$750", "details": "Damage 4D6"},
+
+  {"name": "Cap-and-Ball Revolver (.44) (TA)", "cost": "$130", "details": "Damage 3D6"},
+  {"name": "Cap-and-Ball Revolver (.36) (TA)", "cost": "$100", "details": "Damage 2D6"}
 ]

@@ -1,0 +1,7 @@
+[
+  { "start": 1, "end": 25, "name": "Jurassic Animals" },
+  { "start": 26, "end": 50, "name": "Cretaceous Animals" },
+  { "start": 51, "end": 75, "name": "Cenozoic Animals" },
+  { "start": 76, "end": 85, "name": "Modern Animals" },
+  { "start": 86, "end": 100, "name": "Future Animals" }
+]
