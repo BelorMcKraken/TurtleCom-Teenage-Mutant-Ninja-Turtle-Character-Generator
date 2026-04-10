@@ -1,3 +1,8 @@
+UPDATE! 4/9/2026
+
+Files taken down for restructuring. New version will be uploaded soooooon... :)
+
+
 Cowabunga dudes! This is my README!
 
 TurtleCom is a fan-built character management and content tool for Teenage Mutant Ninja Turtles & Other Strangeness (TMNTOS), designed to streamline character creation, organization, and gameplay for players and GMs.
